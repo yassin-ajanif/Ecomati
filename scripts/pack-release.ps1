@@ -9,8 +9,8 @@ $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $PublishDir = Join-Path $ProjectRoot "publish"
 $ReleaseDir = Join-Path $ProjectRoot "releases"
 
-$PackId = "Faturati"
-$PackTitle = "FATURATI"
+$PackId = "Ecomati"
+$PackTitle = "Ecomati"
 
 Push-Location $ProjectRoot
 try {
@@ -21,7 +21,7 @@ try {
         -o $PublishDir `
         /p:Version=$Version
 
-    $IconPath = Join-Path $ProjectRoot "Assets\faturati.ico"
+    $IconPath = Join-Path $ProjectRoot "Assets\Ecomati.ico"
 
     vpk pack `
         --packId $PackId `
