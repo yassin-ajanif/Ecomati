@@ -327,3 +327,29 @@ public sealed class ReportStockMovementRow
     public string LblQty { get; }
     public string LblStockApres { get; }
 }
+
+public sealed class ReportZakatClientRow
+{
+    public ReportZakatClientRow(string client, decimal solde, string devise)
+    {
+        Client = client;
+        Solde = solde;
+        Devise = devise;
+        LblSolde = $"{solde:N2} {devise}";
+    }
+
+    public string Client { get; }
+    public decimal Solde { get; }
+    public string Devise { get; }
+    public string LblSolde { get; }
+}
+
+public sealed class ReportZakatResult
+{
+    public required decimal TotalBalances { get; init; }
+    public required decimal StockHt { get; init; }
+    public required decimal ZakatBase { get; init; }
+    public required decimal ZakatAmount { get; init; }
+    public required string Devise { get; init; }
+    public required List<ReportZakatClientRow> Clients { get; init; }
+}

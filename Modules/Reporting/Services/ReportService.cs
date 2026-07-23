@@ -802,6 +802,92 @@ public sealed class ReportService : IReportService
         };
     }
 
+    public async Task<ReportZakatResult> GetZakatAsync(CancellationToken ct = default)
+    {
+        var dev = await GetDeviseAsync(ct);
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+
+        var produits = await db.Produits.AsNoTracking()
+            .Where(p => p.StockActuel > 0)
+            .Select(p => new { p.StockActuel, p.PrixAchatHT })
+            .ToListAsync(ct);
+        var stockHt = produits.Sum(p => p.StockActuel * p.PrixAchatHT);
+
+        var clients = await db.Tiers.AsNoTracking()
+            .Where(t => t.Type == TypeTiers.Client || t.Type == TypeTiers.LesDeux)
+            .Select(t => new { t.Id, t.Nom })
+            .ToListAsync(ct);
+
+        var factureByClient = await db.Factures.AsNoTracking()
+            .GroupBy(f => f.ClientId)
+            .Select(g => new { ClientId = g.Key, Total = g.Sum(f => f.TotalTtc) })
+            .ToDictionaryAsync(x => x.ClientId, x => x.Total, ct);
+
+        var paiementByClient = await (
+                from p in db.Paiements.AsNoTracking()
+                join f in db.Factures.AsNoTracking() on p.FactureId equals f.Id
+                where p.Montant > 0
+                group p by f.ClientId into g
+                select new { ClientId = g.Key, Total = g.Sum(x => x.Montant) })
+            .ToDictionaryAsync(x => x.ClientId, x => x.Total, ct);
+
+        var avoirs = await db.Avoirs.AsNoTracking()
+            .Select(a => new
+            {
+                a.ClientId,
+                Lignes = a.Lignes!.Select(l => new
+                {
+                    l.Quantite,
+                    l.PrixUnitaireHT,
+                    l.Remise,
+                    l.TauxTVA
+                }).ToList()
+            })
+            .ToListAsync(ct);
+
+        var avoirByClient = new Dictionary<int, decimal>();
+        foreach (var a in avoirs)
+        {
+            var lignes = a.Lignes.Select(l => new AvoirLigne
+            {
+                Quantite = l.Quantite,
+                PrixUnitaireHT = l.PrixUnitaireHT,
+                Remise = l.Remise,
+                TauxTVA = l.TauxTVA
+            }).ToList();
+            var ttc = DocumentTotalsHelper.AvoirTotals(lignes).ttc;
+            if (ttc <= 0) continue;
+            avoirByClient[a.ClientId] = avoirByClient.GetValueOrDefault(a.ClientId) + ttc;
+        }
+
+        var rows = new List<ReportZakatClientRow>();
+        decimal totalBalances = 0;
+        foreach (var c in clients.OrderBy(c => c.Nom))
+        {
+            var factures = factureByClient.GetValueOrDefault(c.Id);
+            var avoirsTtc = avoirByClient.GetValueOrDefault(c.Id);
+            var paiements = paiementByClient.GetValueOrDefault(c.Id);
+            var solde = factures - avoirsTtc - paiements;
+            if (Math.Abs(solde) < 0.01m) continue;
+
+            totalBalances += solde;
+            rows.Add(new ReportZakatClientRow(c.Nom, solde, dev));
+        }
+
+        var zakatBase = totalBalances + stockHt;
+        var zakatAmount = Math.Round(zakatBase * 0.025m, 2, MidpointRounding.AwayFromZero);
+
+        return new ReportZakatResult
+        {
+            TotalBalances = totalBalances,
+            StockHt = stockHt,
+            ZakatBase = zakatBase,
+            ZakatAmount = zakatAmount,
+            Devise = dev,
+            Clients = rows
+        };
+    }
+
     private async Task<string> GetDeviseAsync(CancellationToken ct = default)
     {
         var cfg = await _settings.GetAsync(ct);

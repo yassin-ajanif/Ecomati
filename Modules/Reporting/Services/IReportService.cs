@@ -25,4 +25,6 @@ public interface IReportService
 
     Task<ReportProfitChargesResult> GetProfitChargesAsync(
         DateTime from, DateTime to, CancellationToken ct = default);
+
+    Task<ReportZakatResult> GetZakatAsync(CancellationToken ct = default);
 }
