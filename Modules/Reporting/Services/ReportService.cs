@@ -802,10 +802,12 @@ public sealed class ReportService : IReportService
         };
     }
 
-    public async Task<ReportZakatResult> GetZakatAsync(CancellationToken ct = default)
+    public async Task<ReportZakatResult> GetZakatAsync(
+        DateTime from, DateTime to, CancellationToken ct = default)
     {
         var dev = await GetDeviseAsync(ct);
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        var toEnd = to.Date.AddDays(1);
 
         var produits = await db.Produits.AsNoTracking()
             .Where(p => p.StockActuel > 0)
@@ -818,7 +820,9 @@ public sealed class ReportService : IReportService
             .Select(t => new { t.Id, t.Nom })
             .ToListAsync(ct);
 
+        // Soldes as of DateTo (include all ledger entries on or before the end date).
         var factureByClient = await db.Factures.AsNoTracking()
+            .Where(f => f.Date < toEnd)
             .GroupBy(f => f.ClientId)
             .Select(g => new { ClientId = g.Key, Total = g.Sum(f => f.TotalTtc) })
             .ToDictionaryAsync(x => x.ClientId, x => x.Total, ct);
@@ -826,12 +830,13 @@ public sealed class ReportService : IReportService
         var paiementByClient = await (
                 from p in db.Paiements.AsNoTracking()
                 join f in db.Factures.AsNoTracking() on p.FactureId equals f.Id
-                where p.Montant > 0
+                where p.Montant > 0 && p.Date < toEnd
                 group p by f.ClientId into g
                 select new { ClientId = g.Key, Total = g.Sum(x => x.Montant) })
             .ToDictionaryAsync(x => x.ClientId, x => x.Total, ct);
 
         var avoirs = await db.Avoirs.AsNoTracking()
+            .Where(a => a.Date < toEnd)
             .Select(a => new
             {
                 a.ClientId,

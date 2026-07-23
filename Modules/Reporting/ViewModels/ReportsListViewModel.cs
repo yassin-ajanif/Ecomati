@@ -193,7 +193,7 @@ public partial class ReportsListViewModel : BaseViewModel
         ShowUnpaid = value == 5;
         ShowStockMovements = value == 6;
         ShowZakat = value == 7;
-        ShowDateFilter = value is not (5 or 7);
+        ShowDateFilter = value != 5;
         LoadReportCommand.Execute(null);
     }
 
@@ -275,7 +275,7 @@ public partial class ReportsListViewModel : BaseViewModel
                     await LoadStockMovementsAsync(from, to, cancellationToken);
                     break;
                 case 7:
-                    await LoadZakatAsync(cancellationToken);
+                    await LoadZakatAsync(from, to, cancellationToken);
                     break;
             }
         }
@@ -335,9 +335,9 @@ public partial class ReportsListViewModel : BaseViewModel
         FinishPagedLoad(_allStockMovements.Count);
     }
 
-    private async Task LoadZakatAsync(CancellationToken ct)
+    private async Task LoadZakatAsync(DateTime from, DateTime to, CancellationToken ct)
     {
-        var result = await Task.Run(() => _reportService.GetZakatAsync(ct), ct);
+        var result = await Task.Run(() => _reportService.GetZakatAsync(from, to, ct), ct);
         _allZakatClients = result.Clients;
         var dev = result.Devise;
         LblZakatTotalBalances = $"{result.TotalBalances:N2} {dev}";

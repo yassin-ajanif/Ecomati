@@ -60,7 +60,7 @@
 
         <!-- Quick date presets (all date-filtered reports) -->
         <shared:DatePresetChipsBar DataContext="{Binding DatePresets}"
-                                   IsVisible="{Binding ShowDateFilter}"/>
+                                   IsVisible="{Binding DataContext.ShowDateFilter, ElementName=ThisControl}"/>
 
         <!-- Date range (hidden for unpaid) -->
         <Grid ColumnDefinitions="Auto,*,Auto,*,Auto" IsVisible="{Binding ShowDateFilter}"
