@@ -7,7 +7,7 @@ namespace GestionCommerciale;
 
 sealed class Program
 {
-    private const string MutexName = "Global\\GestionCommerciale_SingleInstance";
+    private const string MutexName = "Global\\Ecomati_SingleInstance";
 
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
