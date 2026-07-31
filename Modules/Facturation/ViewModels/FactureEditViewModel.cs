@@ -589,7 +589,7 @@ public partial class FactureEditViewModel : BaseViewModel
         }
 
         HookLines();
-        MontantPaye = f.Paiements.Sum(p => p.Montant);
+        MontantPaye = f.Paiements.Where(p => p.Mode != ModePaiement.Credit).Sum(p => p.Montant);
         ReloadPaiementsList(f.Paiements);
         DocumentTotalsHelper.SyncFactureTotalTtc(f);
         if (db.Entry(f).Property(x => x.TotalTtc).IsModified)
