@@ -8,6 +8,7 @@ using GestionCommerciale.Modules.FactureFournisseur.Models;
 using GestionCommerciale.Modules.Livraison;
 using GestionCommerciale.Modules.Livraison.Models;
 using GestionCommerciale.Modules.Reception.Models;
+using GestionCommerciale.Modules.Stock.Models;
 using GestionCommerciale.Modules.Tiers.Models;
 using GestionCommerciale.Shared.Database;
 using GestionCommerciale.Shared.Helpers;
@@ -499,6 +500,19 @@ public sealed class PdfService : IPdfService
             fournisseur,
             party,
             statement,
+            TryLoadLogoBytes(cfg.SocieteLogoPath));
+    }
+
+    public async Task<byte[]> BuildProductCatalogPdfAsync(
+        IReadOnlyList<Produit> products,
+        string? searchTerm,
+        CancellationToken cancellationToken = default)
+    {
+        var cfg = await _settings.GetAsync(cancellationToken);
+        return ProductCatalogPdfRenderer.Render(
+            cfg.SocieteNom,
+            products,
+            searchTerm,
             TryLoadLogoBytes(cfg.SocieteLogoPath));
     }
 

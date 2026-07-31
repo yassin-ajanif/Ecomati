@@ -7,6 +7,7 @@ using GestionCommerciale.Modules.FactureFournisseur.Models;
 using GestionCommerciale.Modules.Facturation.Services;
 using GestionCommerciale.Modules.Livraison.Models;
 using GestionCommerciale.Modules.Reception.Models;
+using GestionCommerciale.Modules.Stock.Models;
 using GestionCommerciale.Modules.Tiers.Models;
 using GestionCommerciale.Shared.Models.Pdf;
 
@@ -32,5 +33,9 @@ public interface IPdfService
         Tiers fournisseur,
         ClientAccountStatementResult statement,
         DocumentPartyPdfInfo party,
+        CancellationToken cancellationToken = default);
+    Task<byte[]> BuildProductCatalogPdfAsync(
+        IReadOnlyList<Produit> products,
+        string? searchTerm,
         CancellationToken cancellationToken = default);
 }

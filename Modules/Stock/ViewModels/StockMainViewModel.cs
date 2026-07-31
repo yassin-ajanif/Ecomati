@@ -20,6 +20,7 @@ public partial class StockMainViewModel : BaseViewModel
     private readonly IDialogService _dialog;
     private readonly ICurrentUserSession _session;
     private readonly ILocaleService _locale;
+    private readonly IPdfService _pdf;
 
     private int _currentProduitId;
 
@@ -28,13 +29,15 @@ public partial class StockMainViewModel : BaseViewModel
         IStockMovementService stock,
         IDialogService dialog,
         ICurrentUserSession session,
-        ILocaleService locale)
+        ILocaleService locale,
+        IPdfService pdf)
     {
         _dbFactory = dbFactory;
         _stock = stock;
         _dialog = dialog;
         _session = session;
         _locale = locale;
+        _pdf = pdf;
         _locale.CultureApplied += (_, _) => RefreshStockUi();
         RefreshStockUi();
         Pagination = new PaginationHelper(() => _ = LoadProduitsAsync(CancellationToken.None));
@@ -47,6 +50,7 @@ public partial class StockMainViewModel : BaseViewModel
     [ObservableProperty] private string _lblCatalog = string.Empty;
     [ObservableProperty] private string _helpStock = string.Empty;
     [ObservableProperty] private string _wmSearch = string.Empty;
+    [ObservableProperty] private string _btnPdf = string.Empty;
     [ObservableProperty] private string _colRef = string.Empty;
     [ObservableProperty] private string _colDesignation = string.Empty;
     [ObservableProperty] private string _colStock = string.Empty;
@@ -73,6 +77,7 @@ public partial class StockMainViewModel : BaseViewModel
         LblCatalog = _locale.T("Lbl_Catalog");
         HelpStock = _locale.T("Lbl_StockMainHelp");
         WmSearch = _locale.T("Wm_SearchProducts");
+        BtnPdf = _locale.T("Btn_Pdf");
         ColRef = _locale.T("Lbl_ColRef");
         ColDesignation = _locale.T("Lbl_ColDesignation");
         ColStock = _locale.T("Lbl_ColStock");
@@ -138,6 +143,41 @@ public partial class StockMainViewModel : BaseViewModel
         {
             IsBusy = false;
         }
+    }
+
+    [RelayCommand]
+    private async Task ExportPdfAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+            var products = await db.Produits.AsNoTracking()
+                .WhereSearchMatches(ProductSearch)
+                .SelectForListWithoutImageData()
+                .OrderBy(p => p.Reference)
+                .ToListAsync(cancellationToken);
+            var bytes = await _pdf.BuildProductCatalogPdfAsync(products, ProductSearch, cancellationToken);
+            var fileName = string.IsNullOrWhiteSpace(ProductSearch)
+                ? "catalogue.pdf"
+                : $"catalogue-{SanitizeFileName(ProductSearch.Trim())}.pdf";
+            var ok = await _dialog.SavePickedFileBytesAsync(
+                _locale.T("Export_PdfPicker"), fileName, new[] { "*.pdf" }, bytes, cancellationToken);
+            if (ok)
+                await _dialog.ShowInfoAsync(_locale.T("Export_Pdf"), _locale.T("Export_Done"), cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Échec de l'export PDF du catalogue", ex, "StockMainViewModel.ExportPdfAsync");
+            await _dialog.ShowErrorAsync(_locale.T("Export_Pdf"), ex.Message, cancellationToken);
+        }
+    }
+
+    private static string SanitizeFileName(string value)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var chars = value.Select(c => invalid.Contains(c) ? '_' : c).ToArray();
+        var cleaned = new string(chars).Trim();
+        return string.IsNullOrEmpty(cleaned) ? "filtre" : cleaned;
     }
 
     partial void OnSelectedProduitChanged(Produit? value)

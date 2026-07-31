@@ -10,7 +10,11 @@
       <Border Padding="12" CornerRadius="8" BorderBrush="#28000000" BorderThickness="1"
               Background="#06000000">
         <Grid RowDefinitions="Auto,Auto,Auto,*">
-          <TextBlock Text="{Binding LblCatalog}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,8"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+            <TextBlock Text="{Binding LblCatalog}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Content="{Binding BtnPdf}" Command="{Binding ExportPdfCommand}"
+                    MinWidth="70" Padding="10,4"/>
+          </Grid>
           <TextBlock Grid.Row="1" Text="{Binding HelpStock}"
                      TextWrapping="Wrap" Opacity="0.75" FontSize="12" Margin="0,0,0,8"/>
           <TextBox Grid.Row="2" Text="{Binding ProductSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
