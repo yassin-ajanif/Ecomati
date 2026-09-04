@@ -372,6 +372,7 @@ internal static class UiTranslationExtras
         ["Reports_PresetMonth"] = ("Ce mois", "هذا الشهر"),
         ["Reports_PresetYear"] = ("Cette année", "هذه السنة"),
         ["Reports_LblTotalSalesMargin"] = ("Total marges ventes", "إجمالي هوامش المبيعات"),
+        ["Reports_LblTotalSales"] = ("Total ventes", "إجمالي المبيعات"),
         ["Reports_LblTotalAvoirsClient"] = ("Total avoirs client", "إجمالي إشعارات دائنة العملاء"),
         ["Reports_LblTotalPurchases"] = ("Total achats", "إجمالي المشتريات"),
         ["Reports_LblTotalAvoirsFournisseur"] = ("Total avoirs fournisseur", "إجمالي إشعارات دائنة الموردين"),

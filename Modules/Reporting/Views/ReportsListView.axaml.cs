@@ -24,6 +24,10 @@ public partial class ReportsListView : UserControl
             case "Margin":
                 vm.FilterProfitMarginCommand.Execute(null);
                 break;
+            case "Ventes":
+                // "Total ventes" uses the same rows as the "Margin" filter (sale documents).
+                vm.FilterProfitMarginCommand.Execute(null);
+                break;
             case "AvoirsClient":
                 vm.FilterProfitAvoirsClientCommand.Execute(null);
                 break;
