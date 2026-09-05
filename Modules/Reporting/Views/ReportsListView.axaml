@@ -12,7 +12,11 @@
       <StackPanel Spacing="12" Margin="4,8,4,32" MinWidth="520">
 
         <!-- Title -->
-        <TextBlock Text="{Binding LblTitle}" FontWeight="SemiBold" FontSize="18"/>
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="{Binding LblTitle}" FontWeight="SemiBold" FontSize="18" VerticalAlignment="Center"/>
+          <Button Grid.Column="1" Content="{Binding BtnPdf}" Command="{Binding ExportPdfCommand}"
+                  MinWidth="70" Padding="10,4" VerticalAlignment="Center"/>
+        </Grid>
 
         <!-- Report selector buttons -->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">

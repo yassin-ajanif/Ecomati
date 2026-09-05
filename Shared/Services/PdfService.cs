@@ -516,6 +516,28 @@ public sealed class PdfService : IPdfService
             TryLoadLogoBytes(cfg.SocieteLogoPath));
     }
 
+    public async Task<byte[]> BuildReportPdfAsync(
+        ReportPdfModel model,
+        CancellationToken cancellationToken = default)
+    {
+        var cfg = await _settings.GetAsync(cancellationToken);
+        var rtl = !string.IsNullOrWhiteSpace(cfg.UiLanguage)
+            && cfg.UiLanguage.StartsWith("ar", StringComparison.OrdinalIgnoreCase);
+        var effective = new ReportPdfModel
+        {
+            Title = model.Title,
+            PeriodLabel = model.PeriodLabel,
+            Columns = model.Columns,
+            Rows = model.Rows,
+            SummaryLines = model.SummaryLines,
+            Landscape = model.Landscape,
+            IsRightToLeft = rtl
+        };
+        return await Task.Run(
+            () => ReportPdfRenderer.Render(cfg.SocieteNom, effective, TryLoadLogoBytes(cfg.SocieteLogoPath)),
+            cancellationToken);
+    }
+
     private static CommercialDocumentPdfModel BaseModel(
         AppSettingsRow cfg,
         string kind,

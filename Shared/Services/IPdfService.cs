@@ -38,4 +38,8 @@ public interface IPdfService
         IReadOnlyList<Produit> products,
         string? searchTerm,
         CancellationToken cancellationToken = default);
+
+    Task<byte[]> BuildReportPdfAsync(
+        ReportPdfModel model,
+        CancellationToken cancellationToken = default);
 }

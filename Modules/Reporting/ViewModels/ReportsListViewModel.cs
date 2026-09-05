@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using GestionCommerciale.Modules.Reporting.Services;
 using GestionCommerciale.Modules.Auth.Services;
 using GestionCommerciale.Shared.Helpers;
+using GestionCommerciale.Shared.Models.Pdf;
 using GestionCommerciale.Shared.Services;
 using GestionCommerciale.Shared.ViewModels;
 
@@ -15,17 +16,20 @@ public partial class ReportsListViewModel : BaseViewModel
     private readonly IDialogService _dialog;
     private readonly ICurrentUserSession _session;
     private readonly ILocaleService _locale;
+    private readonly IPdfService _pdf;
 
     public ReportsListViewModel(
         IReportService reportService,
         IDialogService dialog,
         ICurrentUserSession session,
-        ILocaleService locale)
+        ILocaleService locale,
+        IPdfService pdf)
     {
         _reportService = reportService;
         _dialog = dialog;
         _session = session;
         _locale = locale;
+        _pdf = pdf;
         _locale.CultureApplied += (_, _) => RefreshLabels();
         Pagination = new PaginationHelper(ApplyCurrentPage);
         DatePresets = new DatePresetChipsModel(_locale, (from, to) =>
@@ -57,6 +61,7 @@ public partial class ReportsListViewModel : BaseViewModel
     [ObservableProperty] private string _btnStockMovements = string.Empty;
     [ObservableProperty] private string _btnProfitCharges = string.Empty;
     [ObservableProperty] private string _btnZakat = string.Empty;
+    [ObservableProperty] private string _btnPdf = string.Empty;
 
     [ObservableProperty] private int _selectedReportIndex;
     [ObservableProperty] private DateTimeOffset _dateFrom = new(DateTime.Today);
@@ -133,6 +138,7 @@ public partial class ReportsListViewModel : BaseViewModel
     private List<ReportProfitChargeRow> _allProfitCharges = [];
     private List<ReportProfitChargeRow> _filteredProfitCharges = [];
     private List<ReportZakatClientRow> _allZakatClients = [];
+    private ReportProfitChargesResult? _lastProfitCharges;
     private ReportProfitChargeKind? _profitFilterKind;
 
     public ObservableCollection<ReportSaleByProductRow> SalesByProduct { get; } = [];
@@ -160,6 +166,7 @@ public partial class ReportsListViewModel : BaseViewModel
         BtnStockMovements = _locale.T("Reports_BtnStockMovements");
         BtnProfitCharges = _locale.T("Reports_BtnProfitCharges");
         BtnZakat = _locale.T("Reports_BtnZakat");
+        BtnPdf = _locale.T("Btn_Pdf");
         EmptyMessage = _locale.T("Reports_Empty");
         LblSaleByCustomerLabelHt = _locale.T("Reports_LblTotalHt");
         LblSaleByCustomerLabelTtc = _locale.T("Reports_LblTotalTtc");
@@ -353,6 +360,7 @@ public partial class ReportsListViewModel : BaseViewModel
     private async Task LoadProfitChargesAsync(DateTime from, DateTime to, CancellationToken ct)
     {
         var result = await Task.Run(() => _reportService.GetProfitChargesAsync(from, to, ct), ct);
+        _lastProfitCharges = result;
         _allProfitCharges = result.Rows;
         var dev = result.Devise;
         LblProfitChargesTotalMargin = $"+{result.TotalSalesMargin:N2} {dev}";
@@ -365,6 +373,311 @@ public partial class ReportsListViewModel : BaseViewModel
         LblProfitChargesNetResult = $"{netSign}{result.NetResult:N2} {dev}";
         IsNetPositive = result.NetResult >= 0;
         ApplyProfitFilter(_profitFilterKind);
+    }
+
+    [RelayCommand]
+    private async Task ExportPdfAsync(CancellationToken cancellationToken)
+    {
+        if (!_session.CanAccessReporting)
+        {
+            await _dialog.ShowErrorAsync(_locale.T("Report_Title"), _locale.T("Report_ErrDenied"), cancellationToken);
+            return;
+        }
+
+        try
+        {
+            IsBusy = true;
+            var model = BuildCurrentReportPdfModel();
+            if (model.Rows.Count == 0 && model.SummaryLines.Count == 0)
+            {
+                await _dialog.ShowInfoAsync(_locale.T("Export_Pdf"), _locale.T("Reports_Empty"), cancellationToken);
+                return;
+            }
+
+            var bytes = await _pdf.BuildReportPdfAsync(model, cancellationToken);
+            var fileName = BuildReportFileName(model.Title);
+            var ok = await _dialog.SavePickedFileBytesAsync(
+                _locale.T("Export_PdfPicker"), fileName, new[] { "*.pdf" }, bytes, cancellationToken);
+            if (ok)
+                await _dialog.ShowInfoAsync(_locale.T("Export_Pdf"), _locale.T("Export_Done"), cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Échec de l'export PDF du rapport", ex, "ReportsListViewModel.ExportPdfAsync");
+            await _dialog.ShowErrorAsync(_locale.T("Export_Pdf"), ex.Message, cancellationToken);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private ReportPdfModel BuildCurrentReportPdfModel()
+    {
+        var period = ShowDateFilter
+            ? $"{_locale.T("Reports_From")} {DateFrom:dd/MM/yyyy}  —  {_locale.T("Reports_To")} {DateTo:dd/MM/yyyy}"
+            : null;
+        var right = PdfTextAlignment.End;
+
+        return SelectedReportIndex switch
+        {
+            0 => BuildProfitChargesPdf(period, right),
+            1 => BuildSalesByProductPdf(period, right),
+            2 => BuildSalesByCustomerPdf(period, right),
+            3 => BuildRefundsPdf(period, right),
+            4 => BuildDailySalesPdf(period, right),
+            5 => BuildUnpaidPdf(right),
+            6 => BuildStockMovementsPdf(period, right),
+            7 => BuildZakatPdf(period, right),
+            _ => new ReportPdfModel
+            {
+                Title = _locale.T("Reports_Title"),
+                PeriodLabel = period,
+                Columns = [],
+                Rows = []
+            }
+        };
+    }
+
+    private static ReportPdfRow PdfRow(params string[] cells) =>
+        new() { Cells = cells };
+
+    private static ReportPdfRow PdfDetailRow(params string[] cells) =>
+        new() { Cells = cells, IsDetail = true };
+
+    private ReportPdfModel BuildProfitChargesPdf(string? period, PdfTextAlignment right)
+    {
+        var source = _filteredProfitCharges.Count > 0 || _profitFilterKind != null
+            ? _filteredProfitCharges
+            : _allProfitCharges;
+        var rows = source.Select(r => PdfRow(r.TypeLabel, r.RefLibelle, r.LblDate, r.LblMontantHt, r.LblAmount)).ToList();
+
+        var summary = new List<PdfKeyValueLine>();
+        if (_lastProfitCharges != null)
+        {
+            summary.Add(new(LblProfitChargesVenteLabel, LblProfitChargesTotalVente));
+            summary.Add(new(LblProfitChargesMarginLabel, LblProfitChargesTotalMargin));
+            summary.Add(new(LblProfitChargesAvoirsFournisseurLabel, LblProfitChargesTotalAvoirsFournisseur));
+            summary.Add(new(LblProfitChargesAvoirsClientLabel, LblProfitChargesTotalAvoirsClient));
+            summary.Add(new(LblProfitChargesPurchasesLabel, LblProfitChargesTotalPurchases));
+            summary.Add(new(LblProfitChargesChargesLabel, LblProfitChargesTotalCharges));
+            summary.Add(new(LblProfitChargesNetLabel, LblProfitChargesNetResult));
+        }
+
+        return new ReportPdfModel
+        {
+            Title = BtnProfitCharges,
+            PeriodLabel = period,
+            Columns =
+            [
+                new(ColProfitType, 1.2f),
+                new(ColProfitRef, 2f),
+                new(ColProfitDate, 1f),
+                new(ColProfitHt, 1.1f, right),
+                new(ColProfitAmount, 1.2f, right)
+            ],
+            Rows = rows,
+            SummaryLines = summary,
+            Landscape = true
+        };
+    }
+
+    private ReportPdfModel BuildSalesByProductPdf(string? period, PdfTextAlignment right)
+    {
+        var rows = _allSalesByProduct
+            .Select(r => PdfRow(r.Reference, r.Designation, r.Categorie, r.LblQty, r.LblTtc, r.LblProfit, r.LblMargin))
+            .ToList();
+        return new ReportPdfModel
+        {
+            Title = BtnSaleByProduct,
+            PeriodLabel = period,
+            Columns =
+            [
+                new(_locale.T("Lbl_ColRef"), 1f),
+                new(_locale.T("Lbl_ColDesignation"), 2.2f),
+                new(_locale.T("Reports_ColCategory"), 1f),
+                new(_locale.T("Lbl_Quantity"), 0.8f, right),
+                new(_locale.T("Reports_LblTotalTtc"), 1.1f, right),
+                new(_locale.T("Reports_LblProfit"), 1.1f, right),
+                new(_locale.T("Reports_ColMarginPct"), 0.8f, right)
+            ],
+            Rows = rows,
+            Landscape = true
+        };
+    }
+
+    private ReportPdfModel BuildSalesByCustomerPdf(string? period, PdfTextAlignment right)
+    {
+        var rows = new List<ReportPdfRow>();
+        foreach (var r in _allSalesByCustomer)
+        {
+            rows.Add(PdfRow(r.Client, r.Ville, r.LblCount, r.LblHt, r.LblTtc, r.LblProfit, r.LblMargin));
+            foreach (var p in r.Products)
+                rows.Add(PdfDetailRow($"  • {p.Reference} {p.Designation}", "", p.LblQty, p.LblHt, p.LblTtc, p.LblProfit, p.LblMargin));
+        }
+
+        var summary = new List<PdfKeyValueLine>
+        {
+            new(LblSaleByCustomerLabelHt, LblSaleByCustomerTotalHt),
+            new(LblSaleByCustomerLabelTtc, LblSaleByCustomerTotalTtc),
+            new(LblSaleByCustomerLabelProfit, LblSaleByCustomerTotalProfit)
+        };
+
+        return new ReportPdfModel
+        {
+            Title = BtnSaleByCustomer,
+            PeriodLabel = period,
+            Columns =
+            [
+                new(_locale.T("Lbl_Client"), 2f),
+                new(_locale.T("Lbl_ColVille"), 1f),
+                new(_locale.T("Reports_ColNbFactures"), 0.7f, right),
+                new(_locale.T("Reports_LblTotalHt"), 1.1f, right),
+                new(_locale.T("Reports_LblTotalTtc"), 1.1f, right),
+                new(_locale.T("Reports_LblProfit"), 1.1f, right),
+                new(_locale.T("Reports_ColMarginPct"), 0.8f, right)
+            ],
+            Rows = rows,
+            SummaryLines = summary,
+            Landscape = true
+        };
+    }
+
+    private ReportPdfModel BuildRefundsPdf(string? period, PdfTextAlignment right)
+    {
+        var rows = _allRefunds
+            .Select(r => PdfRow(r.Numero, r.LblDate, r.Client, r.Motif, r.LblRetour, r.LblTotal))
+            .ToList();
+        return new ReportPdfModel
+        {
+            Title = BtnRefunds,
+            PeriodLabel = period,
+            Columns =
+            [
+                new(_locale.T("Lbl_ColRef"), 1f),
+                new(_locale.T("DevisList_ColDate"), 0.9f),
+                new(_locale.T("Lbl_Client"), 1.5f),
+                new(_locale.T("Lbl_Motif"), 1.5f),
+                new(_locale.T("Reports_ColRetour"), 0.8f),
+                new(_locale.T("Reports_LblTotalTtc"), 1.1f, right)
+            ],
+            Rows = rows,
+            Landscape = true
+        };
+    }
+
+    private ReportPdfModel BuildDailySalesPdf(string? period, PdfTextAlignment right)
+    {
+        var rows = new List<ReportPdfRow>();
+        foreach (var r in _allDailySales)
+        {
+            rows.Add(PdfRow(r.LblDate, r.LblCount, r.LblTtc, r.LblProfit, r.LblMargin));
+            foreach (var d in r.Details)
+                rows.Add(PdfDetailRow($"  • {d.Numero}", d.Client, d.LblTtc, d.LblProfit, d.LblMargin));
+        }
+
+        return new ReportPdfModel
+        {
+            Title = BtnDailySales,
+            PeriodLabel = period,
+            Columns =
+            [
+                new(_locale.T("DevisList_ColDate"), 1.4f),
+                new(_locale.T("Reports_ColNbFactures"), 1f, right),
+                new(_locale.T("Reports_LblTotalTtc"), 1.2f, right),
+                new(_locale.T("Reports_LblProfit"), 1.2f, right),
+                new(_locale.T("Reports_ColMarginPct"), 0.9f, right)
+            ],
+            Rows = rows,
+            SummaryLines =
+            [
+                new(LblSaleByCustomerLabelProfit, LblDailySalesTotalProfit)
+            ]
+        };
+    }
+
+    private ReportPdfModel BuildUnpaidPdf(PdfTextAlignment right)
+    {
+        var rows = _allUnpaidSales
+            .Select(r => PdfRow(r.Numero, r.DueStatus, r.DateEcheance, r.Reste))
+            .ToList();
+        return new ReportPdfModel
+        {
+            Title = BtnUnpaid,
+            PeriodLabel = null,
+            Columns =
+            [
+                new(_locale.T("Lbl_ColRef"), 1.2f),
+                new(_locale.T("Reports_ColStatus"), 2f),
+                new(_locale.T("DocList_ColEcheance"), 1.2f),
+                new(_locale.T("Reports_ColReste"), 1.2f, right)
+            ],
+            Rows = rows
+        };
+    }
+
+    private ReportPdfModel BuildStockMovementsPdf(string? period, PdfTextAlignment right)
+    {
+        var rows = _allStockMovements
+            .Select(r => PdfRow(r.LblDate, $"{r.ProduitRef} — {r.ProduitDesignation}", r.TypeMvt, r.LblQty, r.Origine, r.LblStockApres))
+            .ToList();
+        return new ReportPdfModel
+        {
+            Title = BtnStockMovements,
+            PeriodLabel = period,
+            Columns =
+            [
+                new(_locale.T("DevisList_ColDate"), 1.2f),
+                new(_locale.T("Lbl_ColDesignation"), 2.2f),
+                new(_locale.T("Reports_ColType"), 1f),
+                new(_locale.T("Lbl_Quantity"), 0.8f, right),
+                new(_locale.T("Lbl_ColOrigin"), 1.2f),
+                new(_locale.T("Lbl_ColStockCurrent"), 1f, right)
+            ],
+            Rows = rows,
+            SummaryLines =
+            [
+                new(LblStockValHtLabel, LblStockValHt),
+                new(LblStockValTtcLabel, LblStockValTtc)
+            ],
+            Landscape = true
+        };
+    }
+
+    private ReportPdfModel BuildZakatPdf(string? period, PdfTextAlignment right)
+    {
+        var rows = _allZakatClients.Select(r => PdfRow(r.Client, r.LblSolde)).ToList();
+        var summary = new List<PdfKeyValueLine>
+        {
+            new(LblZakatTotalBalancesLabel, LblZakatTotalBalances),
+            new(LblZakatStockHtLabel, LblZakatStockHt),
+            new(LblZakatBaseLabel, LblZakatBase),
+            new(LblZakatAmountLabel, LblZakatAmount)
+        };
+        return new ReportPdfModel
+        {
+            Title = BtnZakat,
+            PeriodLabel = period,
+            Columns =
+            [
+                new(ColZakatClient, 3f),
+                new(ColZakatBalance, 1.2f, right)
+            ],
+            Rows = rows,
+            SummaryLines = summary
+        };
+    }
+
+    private static string BuildReportFileName(string title)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var cleaned = new string(title.Select(c => invalid.Contains(c) || c == ' ' ? '-' : c).ToArray());
+        while (cleaned.Contains("--", StringComparison.Ordinal))
+            cleaned = cleaned.Replace("--", "-", StringComparison.Ordinal);
+        cleaned = cleaned.Trim('-');
+        if (string.IsNullOrEmpty(cleaned))
+            cleaned = "rapport";
+        return $"{cleaned}-{DateTime.Today:yyyy-MM-dd}.pdf".ToLowerInvariant();
     }
 
     [RelayCommand]
