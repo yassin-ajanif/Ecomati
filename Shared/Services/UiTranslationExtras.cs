@@ -366,6 +366,7 @@ internal static class UiTranslationExtras
         ["Reports_LblZakatTotalBalances"] = ("Total des soldes", "إجمالي الأرصدة"),
         ["Reports_LblZakatBase"] = ("Assiette de la zakat", "وعاء الزكاة"),
         ["Reports_LblZakatAmount"] = ("Zakat (2,5 %)", "الزكاة (2.5%)"),
+        ["Reports_BtnClearClient"] = ("Tous les clients", "كل العملاء"),
         ["Reports_CategoryService"] = ("Service", "خدمة"),
         ["Reports_PresetToday"] = ("Aujourd'hui", "اليوم"),
         ["Reports_PresetWeek"] = ("Cette semaine", "هذا الأسبوع"),

@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:GestionCommerciale.Modules.Reporting.ViewModels"
+             xmlns:m="using:GestionCommerciale.Modules.Tiers.Models"
              xmlns:conv="using:GestionCommerciale.Shared.Converters"
              xmlns:shared="using:GestionCommerciale.Shared.Views"
              x:Class="GestionCommerciale.Modules.Reporting.Views.ReportsListView"
@@ -124,6 +125,30 @@
 
         <!-- Sale by customer table -->
         <StackPanel Spacing="8" IsVisible="{Binding ShowSaleByCustomer}">
+          <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+            <TextBlock Grid.Column="0" Text="{Binding LblSaleByCustomerClient}" VerticalAlignment="Center"
+                       Margin="0,0,8,0" Classes="subtle"/>
+            <AutoCompleteBox Grid.Column="1" MinWidth="220" MaxWidth="420"
+                             MinimumPrefixLength="1" MaxDropDownHeight="320"
+                             Watermark="{Binding WmSaleByCustomerClient}"
+                             ItemsSource="{Binding SaleByCustomerClients}"
+                             ItemFilter="{Binding PartyAutocompleteFilter}"
+                             SelectedItem="{Binding SelectedSaleByCustomerClient, Mode=TwoWay}">
+              <AutoCompleteBox.ValueMemberBinding>
+                <Binding Path="Nom"/>
+              </AutoCompleteBox.ValueMemberBinding>
+              <AutoCompleteBox.ItemTemplate>
+                <DataTemplate DataType="m:Tiers">
+                  <TextBlock Text="{Binding Nom}"/>
+                </DataTemplate>
+              </AutoCompleteBox.ItemTemplate>
+            </AutoCompleteBox>
+            <Button Grid.Column="2" Content="{Binding BtnClearSaleByCustomerClient}"
+                    Command="{Binding ClearSaleByCustomerClientCommand}"
+                    Margin="12,0,0,0" VerticalAlignment="Center"
+                    IsEnabled="{Binding SelectedSaleByCustomerClient, Converter={x:Static conv:IsNotNullConverter.Instance}}"/>
+          </Grid>
+
           <Border Padding="16" Background="{DynamicResource CourseraSurfaceBrush}"
                   BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="12">
             <StackPanel Spacing="8">

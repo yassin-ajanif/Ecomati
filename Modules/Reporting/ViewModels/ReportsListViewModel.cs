@@ -1,12 +1,17 @@
 using System.Collections.ObjectModel;
+using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GestionCommerciale.Modules.Reporting.Services;
 using GestionCommerciale.Modules.Auth.Services;
+using GestionCommerciale.Modules.Tiers.Models;
+using TiersEntity = GestionCommerciale.Modules.Tiers.Models.Tiers;
+using GestionCommerciale.Shared.Database;
 using GestionCommerciale.Shared.Helpers;
 using GestionCommerciale.Shared.Models.Pdf;
 using GestionCommerciale.Shared.Services;
 using GestionCommerciale.Shared.ViewModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace GestionCommerciale.Modules.Reporting.ViewModels;
 
@@ -17,19 +22,22 @@ public partial class ReportsListViewModel : BaseViewModel
     private readonly ICurrentUserSession _session;
     private readonly ILocaleService _locale;
     private readonly IPdfService _pdf;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
 
     public ReportsListViewModel(
         IReportService reportService,
         IDialogService dialog,
         ICurrentUserSession session,
         ILocaleService locale,
-        IPdfService pdf)
+        IPdfService pdf,
+        IDbContextFactory<AppDbContext> dbFactory)
     {
         _reportService = reportService;
         _dialog = dialog;
         _session = session;
         _locale = locale;
         _pdf = pdf;
+        _dbFactory = dbFactory;
         _locale.CultureApplied += (_, _) => RefreshLabels();
         Pagination = new PaginationHelper(ApplyCurrentPage);
         DatePresets = new DatePresetChipsModel(_locale, (from, to) =>
@@ -62,6 +70,10 @@ public partial class ReportsListViewModel : BaseViewModel
     [ObservableProperty] private string _btnProfitCharges = string.Empty;
     [ObservableProperty] private string _btnZakat = string.Empty;
     [ObservableProperty] private string _btnPdf = string.Empty;
+    [ObservableProperty] private string _wmSaleByCustomerClient = string.Empty;
+    [ObservableProperty] private string _lblSaleByCustomerClient = string.Empty;
+    [ObservableProperty] private string _btnClearSaleByCustomerClient = string.Empty;
+    [ObservableProperty] private TiersEntity? _selectedSaleByCustomerClient;
 
     [ObservableProperty] private int _selectedReportIndex;
     [ObservableProperty] private DateTimeOffset _dateFrom = new(DateTime.Today);
@@ -131,6 +143,8 @@ public partial class ReportsListViewModel : BaseViewModel
 
     private List<ReportSaleByProductRow> _allSalesByProduct = [];
     private List<ReportSaleByCustomerRow> _allSalesByCustomer = [];
+    private List<ReportSaleByCustomerRow> _filteredSalesByCustomer = [];
+    private bool _clientsLoaded;
     private List<ReportRefundRow> _allRefunds = [];
     private List<ReportDailySaleRow> _allDailySales = [];
     private List<ReportUnpaidRow> _allUnpaidSales = [];
@@ -143,6 +157,8 @@ public partial class ReportsListViewModel : BaseViewModel
 
     public ObservableCollection<ReportSaleByProductRow> SalesByProduct { get; } = [];
     public ObservableCollection<ReportSaleByCustomerRow> SalesByCustomer { get; } = [];
+    public ObservableCollection<TiersEntity> SaleByCustomerClients { get; } = [];
+    public AutoCompleteFilterPredicate<object?> PartyAutocompleteFilter => PartyAutoComplete.ItemFilter;
     public ObservableCollection<ReportRefundRow> Refunds { get; } = [];
     public ObservableCollection<ReportDailySaleRow> DailySales { get; } = [];
     public ObservableCollection<ReportUnpaidRow> UnpaidSales { get; } = [];
@@ -167,6 +183,9 @@ public partial class ReportsListViewModel : BaseViewModel
         BtnProfitCharges = _locale.T("Reports_BtnProfitCharges");
         BtnZakat = _locale.T("Reports_BtnZakat");
         BtnPdf = _locale.T("Btn_Pdf");
+        WmSaleByCustomerClient = _locale.T("Wm_SearchClient");
+        LblSaleByCustomerClient = _locale.T("Lbl_Client");
+        BtnClearSaleByCustomerClient = _locale.T("Reports_BtnClearClient");
         EmptyMessage = _locale.T("Reports_Empty");
         LblSaleByCustomerLabelHt = _locale.T("Reports_LblTotalHt");
         LblSaleByCustomerLabelTtc = _locale.T("Reports_LblTotalTtc");
@@ -308,12 +327,49 @@ public partial class ReportsListViewModel : BaseViewModel
 
     private async Task LoadSalesByCustomerAsync(DateTime from, DateTime to, CancellationToken ct)
     {
+        await EnsureClientsLoadedAsync(ct);
         _allSalesByCustomer = await Task.Run(() => _reportService.GetSalesByCustomerAsync(from, to, ct), ct);
-        var dev = _allSalesByCustomer.Count > 0 ? _allSalesByCustomer[0].Devise : "MAD";
-        LblSaleByCustomerTotalHt = $"{_allSalesByCustomer.Sum(r => r.TotalHt):N2} {dev}";
-        LblSaleByCustomerTotalTtc = $"{_allSalesByCustomer.Sum(r => r.TotalTtc):N2} {dev}";
-        LblSaleByCustomerTotalProfit = $"{_allSalesByCustomer.Sum(r => r.Profit):N2} {dev}";
-        FinishPagedLoad(_allSalesByCustomer.Count);
+        ApplySaleByCustomerFilter();
+    }
+
+    private async Task EnsureClientsLoadedAsync(CancellationToken ct)
+    {
+        if (_clientsLoaded) return;
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        var clients = await db.Tiers.AsNoTracking()
+            .Where(t => t.Actif && (t.Type == TypeTiers.Client || t.Type == TypeTiers.LesDeux))
+            .OrderBy(t => t.Nom)
+            .ToListAsync(ct);
+        SaleByCustomerClients.Clear();
+        foreach (var c in clients)
+            SaleByCustomerClients.Add(c);
+        _clientsLoaded = true;
+    }
+
+    partial void OnSelectedSaleByCustomerClientChanged(TiersEntity? value)
+    {
+        if (SelectedReportIndex == 2)
+            ApplySaleByCustomerFilter();
+    }
+
+    [RelayCommand]
+    private void ClearSaleByCustomerClient()
+    {
+        SelectedSaleByCustomerClient = null;
+    }
+
+    private void ApplySaleByCustomerFilter()
+    {
+        _filteredSalesByCustomer = SelectedSaleByCustomerClient is null
+            ? _allSalesByCustomer
+            : _allSalesByCustomer.Where(r => r.ClientId == SelectedSaleByCustomerClient.Id).ToList();
+
+        var source = _filteredSalesByCustomer;
+        var dev = source.Count > 0 ? source[0].Devise : (_allSalesByCustomer.Count > 0 ? _allSalesByCustomer[0].Devise : "MAD");
+        LblSaleByCustomerTotalHt = $"{source.Sum(r => r.TotalHt):N2} {dev}";
+        LblSaleByCustomerTotalTtc = $"{source.Sum(r => r.TotalTtc):N2} {dev}";
+        LblSaleByCustomerTotalProfit = $"{source.Sum(r => r.Profit):N2} {dev}";
+        FinishPagedLoad(source.Count);
     }
 
     private async Task LoadRefundsAsync(DateTime from, DateTime to, CancellationToken ct)
@@ -509,7 +565,7 @@ public partial class ReportsListViewModel : BaseViewModel
     private ReportPdfModel BuildSalesByCustomerPdf(string? period, PdfTextAlignment right)
     {
         var rows = new List<ReportPdfRow>();
-        foreach (var r in _allSalesByCustomer)
+        foreach (var r in _filteredSalesByCustomer)
         {
             rows.Add(PdfRow(r.Client, r.Ville, r.LblCount, r.LblHt, r.LblTtc, r.LblProfit, r.LblMargin));
             foreach (var p in r.Products)
@@ -742,7 +798,7 @@ public partial class ReportsListViewModel : BaseViewModel
                 ApplyPage(SalesByProduct, _allSalesByProduct);
                 break;
             case 2:
-                ApplyPage(SalesByCustomer, _allSalesByCustomer);
+                ApplyPage(SalesByCustomer, _filteredSalesByCustomer);
                 break;
             case 3:
                 ApplyPage(Refunds, _allRefunds);

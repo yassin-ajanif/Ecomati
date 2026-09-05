@@ -78,11 +78,12 @@ public sealed class ReportSaleByCustomerProductRow
 
 public sealed partial class ReportSaleByCustomerRow : ObservableObject
 {
-    public ReportSaleByCustomerRow(string client, string ice, string ville,
+    public ReportSaleByCustomerRow(int clientId, string client, string ice, string ville,
         int nbFactures, decimal totalHt, decimal totalTtc, string devise,
         decimal profit, decimal marginPct,
         List<ReportSaleByCustomerProductRow>? products = null)
     {
+        ClientId = clientId;
         Client = client;
         Ice = ice;
         Ville = ville;
@@ -104,6 +105,7 @@ public sealed partial class ReportSaleByCustomerRow : ObservableObject
         }
     }
 
+    public int ClientId { get; }
     public string Client { get; }
     public string Ice { get; }
     public string Ville { get; }

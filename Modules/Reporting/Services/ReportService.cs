@@ -254,6 +254,7 @@ public sealed class ReportService : IReportService
                 var marginPct = totalHt > 0 ? totalProfit / totalHt * 100m : 0;
 
                 return new ReportSaleByCustomerRow(
+                    g.Key,
                     c?.Nom ?? string.Empty,
                     c?.ICE ?? string.Empty,
                     c?.Ville ?? string.Empty,
