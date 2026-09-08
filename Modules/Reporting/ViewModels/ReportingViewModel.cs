@@ -213,17 +213,20 @@ public partial class ReportingViewModel : BaseViewModel
 
         var stockAlertRows = new List<ReportStockAlertRow>();
         var alerts = await db.Produits.AsNoTracking()
-            .Where(p => p.Actif && p.StockMinimum > 0 && p.StockActuel < p.StockMinimum)
+            .Where(p => p.Actif && p.StockMinimum > 0 && p.StockActuel <= p.StockMinimum)
             .SelectForListWithoutImageData()
             .Take(100)
             .ToListAsync(ct);
+        var shouldQuote = _locale.T("Report_StockShouldQuote");
         foreach (var p in alerts)
         {
             stockAlertRows.Add(new ReportStockAlertRow(
                 p.Reference,
+                p.Designation,
                 _locale.Tf("Report_FmtStockDetail",
                     p.StockActuel.ToString("N2", CultureInfo.CurrentCulture),
-                    p.StockMinimum.ToString("N2", CultureInfo.CurrentCulture))));
+                    p.StockMinimum.ToString("N2", CultureInfo.CurrentCulture)),
+                shouldQuote));
         }
 
         var unpaidProj = await db.Factures.AsNoTracking()

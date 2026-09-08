@@ -436,71 +436,26 @@ public sealed class ReportService : IReportService
         return grouped;
     }
 
-    public async Task<List<ReportUnpaidRow>> GetUnpaidSalesAsync(CancellationToken ct = default)
+    public async Task<List<ReportLowStockRow>> GetLowStockProductsAsync(CancellationToken ct = default)
     {
-        var dev = await GetDeviseAsync(ct);
-        var now = DateTime.Today;
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
 
-        var unpaid = await db.Factures.AsNoTracking()
-            .Where(f => !f.EstPayee)
-            .OrderBy(f => f.DateEcheance)
-            .Take(200)
-            .Select(f => new
+        var produits = await db.Produits.AsNoTracking()
+            .Where(p => p.Actif && p.StockMinimum > 0 && p.StockActuel <= p.StockMinimum)
+            .OrderBy(p => p.Reference)
+            .Select(p => new
             {
-                f.Numero,
-                f.DateEcheance,
-                f.RemiseGlobale,
-                Lignes = f.Lignes!.Select(l => new
-                {
-                    l.Quantite, l.PrixUnitaireHT, l.Remise, l.TauxTVA
-                }).ToList(),
-                Paiements = f.Paiements!.Select(p => p.Montant).ToList()
+                p.Reference,
+                p.Designation,
+                p.StockActuel,
+                p.StockMinimum
             })
+            .Take(500)
             .ToListAsync(ct);
 
-        var rows = new List<ReportUnpaidRow>();
-        foreach (var f in unpaid)
-        {
-            var lignes = f.Lignes.Select(l => new FactureLigne
-            {
-                Quantite = l.Quantite,
-                PrixUnitaireHT = l.PrixUnitaireHT,
-                Remise = l.Remise,
-                TauxTVA = l.TauxTVA
-            }).ToList();
-            var (_, _, ttc) = DocumentTotalsHelper.FactureTotals(lignes, f.RemiseGlobale);
-            var paye = f.Paiements.Sum();
-            var reste = ttc - paye;
-            if (reste <= 0.01m) continue;
-
-            var due = f.DateEcheance.Date;
-            var daysFromDue = (now - due).Days;
-            string dueStatus;
-            var isOverdue = daysFromDue > 0;
-            var isDueSoon = false;
-            if (daysFromDue > 0)
-                dueStatus = _locale.Tf("Report_UnpaidOverdueFmt", daysFromDue.ToString());
-            else if (daysFromDue == 0)
-                dueStatus = _locale.T("Report_UnpaidDueToday");
-            else
-            {
-                var until = -daysFromDue;
-                dueStatus = _locale.Tf("Report_UnpaidDueInFmt", until.ToString());
-                if (until <= 7)
-                    isDueSoon = true;
-            }
-
-            rows.Add(new ReportUnpaidRow(
-                f.Numero ?? string.Empty,
-                CurrencyHelper.Format(reste, dev),
-                f.DateEcheance.ToString("d"),
-                dueStatus,
-                isOverdue,
-                isDueSoon));
-        }
-
-        return rows;
+        return produits
+            .Select(p => new ReportLowStockRow(p.Reference, p.Designation, p.StockActuel, p.StockMinimum))
+            .ToList();
     }
 
     public async Task<List<ReportStockMovementRow>> GetStockMovementsAsync(
@@ -526,6 +481,10 @@ public sealed class ReportService : IReportService
                 TypeMouvement.Ajustement => _locale.T("TypeMvt_Ajustement"),
                 _ => m.Type.ToString()
             };
+            var min = m.Produit?.StockMinimum ?? 0m;
+            var shouldQuote = min > 0 && m.StockApres <= min
+                ? _locale.T("Report_StockShouldQuote")
+                : string.Empty;
             return new ReportStockMovementRow(
                 m.CreatedAt,
                 m.Produit?.Reference ?? string.Empty,
@@ -533,7 +492,8 @@ public sealed class ReportService : IReportService
                 typeStr,
                 m.Quantite,
                 m.OrigineType,
-                m.StockApres);
+                m.StockApres,
+                shouldQuote);
         }).ToList();
     }
 

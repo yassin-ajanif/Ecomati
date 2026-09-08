@@ -65,7 +65,7 @@ public partial class ReportsListViewModel : BaseViewModel
     [ObservableProperty] private string _btnSaleByCustomer = string.Empty;
     [ObservableProperty] private string _btnRefunds = string.Empty;
     [ObservableProperty] private string _btnDailySales = string.Empty;
-    [ObservableProperty] private string _btnUnpaid = string.Empty;
+    [ObservableProperty] private string _btnLowStock = string.Empty;
     [ObservableProperty] private string _btnStockMovements = string.Empty;
     [ObservableProperty] private string _btnProfitCharges = string.Empty;
     [ObservableProperty] private string _btnZakat = string.Empty;
@@ -84,7 +84,7 @@ public partial class ReportsListViewModel : BaseViewModel
     [ObservableProperty] private bool _showSaleByCustomer;
     [ObservableProperty] private bool _showRefunds;
     [ObservableProperty] private bool _showDailySales;
-    [ObservableProperty] private bool _showUnpaid;
+    [ObservableProperty] private bool _showLowStock;
     [ObservableProperty] private bool _showStockMovements;
     [ObservableProperty] private bool _showProfitCharges;
     [ObservableProperty] private bool _showZakat;
@@ -123,6 +123,10 @@ public partial class ReportsListViewModel : BaseViewModel
     [ObservableProperty] private string _colProfitDate = string.Empty;
     [ObservableProperty] private string _colProfitHt = string.Empty;
     [ObservableProperty] private string _colProfitAmount = string.Empty;
+    [ObservableProperty] private string _colLowStockRef = string.Empty;
+    [ObservableProperty] private string _colLowStockName = string.Empty;
+    [ObservableProperty] private string _colLowStockActual = string.Empty;
+    [ObservableProperty] private string _colLowStockMin = string.Empty;
     [ObservableProperty] private string _colZakatClient = string.Empty;
     [ObservableProperty] private string _colZakatBalance = string.Empty;
     [ObservableProperty] private string _lblZakatTotalBalancesLabel = string.Empty;
@@ -147,7 +151,7 @@ public partial class ReportsListViewModel : BaseViewModel
     private bool _clientsLoaded;
     private List<ReportRefundRow> _allRefunds = [];
     private List<ReportDailySaleRow> _allDailySales = [];
-    private List<ReportUnpaidRow> _allUnpaidSales = [];
+    private List<ReportLowStockRow> _allLowStock = [];
     private List<ReportStockMovementRow> _allStockMovements = [];
     private List<ReportProfitChargeRow> _allProfitCharges = [];
     private List<ReportProfitChargeRow> _filteredProfitCharges = [];
@@ -161,7 +165,7 @@ public partial class ReportsListViewModel : BaseViewModel
     public AutoCompleteFilterPredicate<object?> PartyAutocompleteFilter => PartyAutoComplete.ItemFilter;
     public ObservableCollection<ReportRefundRow> Refunds { get; } = [];
     public ObservableCollection<ReportDailySaleRow> DailySales { get; } = [];
-    public ObservableCollection<ReportUnpaidRow> UnpaidSales { get; } = [];
+    public ObservableCollection<ReportLowStockRow> LowStockProducts { get; } = [];
     public ObservableCollection<ReportStockMovementRow> StockMovements { get; } = [];
     public ObservableCollection<ReportProfitChargeRow> ProfitCharges { get; } = [];
     public ObservableCollection<ReportZakatClientRow> ZakatClients { get; } = [];
@@ -178,7 +182,11 @@ public partial class ReportsListViewModel : BaseViewModel
         BtnSaleByCustomer = _locale.T("Reports_BtnSaleByCustomer");
         BtnRefunds = _locale.T("Reports_BtnRefunds");
         BtnDailySales = _locale.T("Reports_BtnDailySales");
-        BtnUnpaid = _locale.T("Reports_BtnUnpaid");
+        BtnLowStock = _locale.T("Reports_BtnLowStock");
+        ColLowStockRef = _locale.T("Lbl_ColRef");
+        ColLowStockName = _locale.T("Lbl_ColDesignation");
+        ColLowStockActual = _locale.T("Reports_ColStockActuel");
+        ColLowStockMin = _locale.T("Lbl_StockMinField");
         BtnStockMovements = _locale.T("Reports_BtnStockMovements");
         BtnProfitCharges = _locale.T("Reports_BtnProfitCharges");
         BtnZakat = _locale.T("Reports_BtnZakat");
@@ -219,10 +227,13 @@ public partial class ReportsListViewModel : BaseViewModel
         ShowSaleByCustomer = value == 2;
         ShowRefunds = value == 3;
         ShowDailySales = value == 4;
-        ShowUnpaid = value == 5;
+        ShowLowStock = value == 5;
         ShowStockMovements = value == 6;
         ShowZakat = value == 7;
         ShowDateFilter = value != 5;
+        EmptyMessage = value == 5
+            ? _locale.T("Report_EmptyStock")
+            : _locale.T("Reports_Empty");
         LoadReportCommand.Execute(null);
     }
 
@@ -244,7 +255,7 @@ public partial class ReportsListViewModel : BaseViewModel
     [RelayCommand] private void GoSaleByCustomer() => SelectedReportIndex = 2;
     [RelayCommand] private void GoRefunds() => SelectedReportIndex = 3;
     [RelayCommand] private void GoDailySales() => SelectedReportIndex = 4;
-    [RelayCommand] private void GoUnpaid() => SelectedReportIndex = 5;
+    [RelayCommand] private void GoLowStock() => SelectedReportIndex = 5;
     [RelayCommand] private void GoStockMovements() => SelectedReportIndex = 6;
     [RelayCommand] private void GoZakat() => SelectedReportIndex = 7;
 
@@ -298,7 +309,7 @@ public partial class ReportsListViewModel : BaseViewModel
                     await LoadDailySalesAsync(from, to, cancellationToken);
                     break;
                 case 5:
-                    await LoadUnpaidAsync(cancellationToken);
+                    await LoadLowStockAsync(cancellationToken);
                     break;
                 case 6:
                     await LoadStockMovementsAsync(from, to, cancellationToken);
@@ -386,10 +397,10 @@ public partial class ReportsListViewModel : BaseViewModel
         FinishPagedLoad(_allDailySales.Count);
     }
 
-    private async Task LoadUnpaidAsync(CancellationToken ct)
+    private async Task LoadLowStockAsync(CancellationToken ct)
     {
-        _allUnpaidSales = await Task.Run(() => _reportService.GetUnpaidSalesAsync(ct), ct);
-        FinishPagedLoad(_allUnpaidSales.Count);
+        _allLowStock = await Task.Run(() => _reportService.GetLowStockProductsAsync(ct), ct);
+        FinishPagedLoad(_allLowStock.Count);
     }
 
     private async Task LoadStockMovementsAsync(DateTime from, DateTime to, CancellationToken ct)
@@ -482,7 +493,7 @@ public partial class ReportsListViewModel : BaseViewModel
             2 => BuildSalesByCustomerPdf(period, right),
             3 => BuildRefundsPdf(period, right),
             4 => BuildDailySalesPdf(period, right),
-            5 => BuildUnpaidPdf(right),
+            5 => BuildLowStockPdf(right),
             6 => BuildStockMovementsPdf(period, right),
             7 => BuildZakatPdf(period, right),
             _ => new ReportPdfModel
@@ -652,21 +663,21 @@ public partial class ReportsListViewModel : BaseViewModel
         };
     }
 
-    private ReportPdfModel BuildUnpaidPdf(PdfTextAlignment right)
+    private ReportPdfModel BuildLowStockPdf(PdfTextAlignment right)
     {
-        var rows = _allUnpaidSales
-            .Select(r => PdfRow(r.Numero, r.DueStatus, r.DateEcheance, r.Reste))
+        var rows = _allLowStock
+            .Select(r => PdfRow(r.Reference, r.Designation, r.LblStockActuel, r.LblStockMinimum))
             .ToList();
         return new ReportPdfModel
         {
-            Title = BtnUnpaid,
+            Title = BtnLowStock,
             PeriodLabel = null,
             Columns =
             [
-                new(_locale.T("Lbl_ColRef"), 1.2f),
-                new(_locale.T("Reports_ColStatus"), 2f),
-                new(_locale.T("DocList_ColEcheance"), 1.2f),
-                new(_locale.T("Reports_ColReste"), 1.2f, right)
+                new(ColLowStockRef, 1.2f),
+                new(ColLowStockName, 2.2f),
+                new(ColLowStockActual, 1.1f, right),
+                new(ColLowStockMin, 1.1f, right)
             ],
             Rows = rows
         };
@@ -675,7 +686,14 @@ public partial class ReportsListViewModel : BaseViewModel
     private ReportPdfModel BuildStockMovementsPdf(string? period, PdfTextAlignment right)
     {
         var rows = _allStockMovements
-            .Select(r => PdfRow(r.LblDate, $"{r.ProduitRef} — {r.ProduitDesignation}", r.TypeMvt, r.LblQty, r.Origine, r.LblStockApres))
+            .Select(r => PdfRow(
+                r.LblDate,
+                $"{r.ProduitRef} — {r.ProduitDesignation}",
+                r.TypeMvt,
+                r.LblQty,
+                r.Origine,
+                r.LblStockApres,
+                r.ShowShouldQuote ? r.Status : "—"))
             .ToList();
         return new ReportPdfModel
         {
@@ -683,12 +701,13 @@ public partial class ReportsListViewModel : BaseViewModel
             PeriodLabel = period,
             Columns =
             [
-                new(_locale.T("DevisList_ColDate"), 1.2f),
-                new(_locale.T("Lbl_ColDesignation"), 2.2f),
-                new(_locale.T("Reports_ColType"), 1f),
-                new(_locale.T("Lbl_Quantity"), 0.8f, right),
-                new(_locale.T("Lbl_ColOrigin"), 1.2f),
-                new(_locale.T("Lbl_ColStockCurrent"), 1f, right)
+                new(_locale.T("DevisList_ColDate"), 1.1f),
+                new(_locale.T("Lbl_ColDesignation"), 1.8f),
+                new(_locale.T("Reports_ColType"), 0.9f),
+                new(_locale.T("Lbl_Quantity"), 0.7f, right),
+                new(_locale.T("Lbl_ColOrigin"), 1f),
+                new(_locale.T("Lbl_ColStockCurrent"), 0.9f, right),
+                new(_locale.T("Reports_ColStatus"), 1.4f)
             ],
             Rows = rows,
             SummaryLines =
@@ -807,7 +826,7 @@ public partial class ReportsListViewModel : BaseViewModel
                 ApplyPage(DailySales, _allDailySales);
                 break;
             case 5:
-                ApplyPage(UnpaidSales, _allUnpaidSales);
+                ApplyPage(LowStockProducts, _allLowStock);
                 break;
             case 6:
                 ApplyPage(StockMovements, _allStockMovements);

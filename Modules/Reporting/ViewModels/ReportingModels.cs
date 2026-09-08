@@ -19,14 +19,18 @@ public sealed class ReportRankRow
 
 public sealed class ReportStockAlertRow
 {
-    public ReportStockAlertRow(string reference, string detail)
+    public ReportStockAlertRow(string reference, string designation, string detail, string status)
     {
         Reference = reference;
+        Designation = designation;
         Detail = detail;
+        Status = status;
     }
 
     public string Reference { get; }
+    public string Designation { get; }
     public string Detail { get; }
+    public string Status { get; }
 }
 
 public sealed class ReportUnpaidRow

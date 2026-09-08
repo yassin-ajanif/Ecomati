@@ -305,7 +305,7 @@ public sealed class ReportProfitChargesResult
 public sealed class ReportStockMovementRow
 {
     public ReportStockMovementRow(DateTime date, string produitRef, string produitDesignation,
-        string typeMvt, decimal quantite, string origine, decimal stockApres)
+        string typeMvt, decimal quantite, string origine, decimal stockApres, string status)
     {
         Date = date;
         ProduitRef = produitRef;
@@ -314,9 +314,11 @@ public sealed class ReportStockMovementRow
         Quantite = quantite;
         Origine = origine;
         StockApres = stockApres;
+        Status = status;
         LblDate = date.ToString("g");
         LblQty = quantite.ToString("N2");
         LblStockApres = stockApres.ToString("N2");
+        ShowShouldQuote = !string.IsNullOrWhiteSpace(status);
     }
 
     public DateTime Date { get; }
@@ -326,9 +328,31 @@ public sealed class ReportStockMovementRow
     public decimal Quantite { get; }
     public string Origine { get; }
     public decimal StockApres { get; }
+    public string Status { get; }
+    public bool ShowShouldQuote { get; }
     public string LblDate { get; }
     public string LblQty { get; }
     public string LblStockApres { get; }
+}
+
+public sealed class ReportLowStockRow
+{
+    public ReportLowStockRow(string reference, string designation, decimal stockActuel, decimal stockMinimum)
+    {
+        Reference = reference;
+        Designation = designation;
+        StockActuel = stockActuel;
+        StockMinimum = stockMinimum;
+        LblStockActuel = stockActuel.ToString("N2");
+        LblStockMinimum = stockMinimum.ToString("N2");
+    }
+
+    public string Reference { get; }
+    public string Designation { get; }
+    public decimal StockActuel { get; }
+    public decimal StockMinimum { get; }
+    public string LblStockActuel { get; }
+    public string LblStockMinimum { get; }
 }
 
 public sealed class ReportZakatClientRow
