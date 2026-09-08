@@ -47,6 +47,12 @@ public class HomeViewModel : BaseViewModel
 
     public bool ShowTrialMessage => TrialMessage is not null;
 
+    public void RefreshDashboard()
+    {
+        Dashboard?.LoadCommand.Execute(null);
+        _ = RefreshTrialMessageAsync();
+    }
+
     private async Task RefreshTrialMessageAsync()
     {
         var settings = await _appSettings.GetAsync(default);

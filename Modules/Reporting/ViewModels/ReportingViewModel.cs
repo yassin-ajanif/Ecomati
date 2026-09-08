@@ -21,8 +21,6 @@ public partial class ReportingViewModel : BaseViewModel
     private readonly ICurrentUserSession _session;
     private readonly ILocaleService _locale;
 
-    private ReportData? _cachedData;
-
     public ReportingViewModel(
         IDbContextFactory<AppDbContext> dbFactory,
         IDialogService dialog,
@@ -42,7 +40,6 @@ public partial class ReportingViewModel : BaseViewModel
 
     [ObservableProperty] private string _lblCa = string.Empty;
     [ObservableProperty] private string _lblCaDelta = string.Empty;
-    [ObservableProperty] private string _lblKpiStrip = string.Empty;
     [ObservableProperty] private string _lblTopClients = string.Empty;
     [ObservableProperty] private string _lblTopProducts = string.Empty;
     [ObservableProperty] private string _lblStockAlerts = string.Empty;
@@ -54,14 +51,6 @@ public partial class ReportingViewModel : BaseViewModel
 
     [ObservableProperty] private string _caMoisCourant = string.Empty;
     [ObservableProperty] private string _caMoisPrecedent = string.Empty;
-
-    [ObservableProperty] private string _kpiDevis30 = string.Empty;
-    [ObservableProperty] private string _kpiDevisExpire = string.Empty;
-    [ObservableProperty] private string _kpiBlMonth = string.Empty;
-    [ObservableProperty] private string _kpiBc = string.Empty;
-    [ObservableProperty] private string _kpiBrMonth = string.Empty;
-    [ObservableProperty] private string _kpiEncours = string.Empty;
-    [ObservableProperty] private string _kpiStock = string.Empty;
 
     [ObservableProperty] private bool _showEmptyTopClients;
     [ObservableProperty] private bool _showEmptyTopProducts;
@@ -84,7 +73,6 @@ public partial class ReportingViewModel : BaseViewModel
         LblLoading = _locale.T("Report_Loading");
         LblCa = _locale.T("Report_LblCa");
         LblCaDelta = _locale.T("Report_LblCaDelta");
-        LblKpiStrip = _locale.T("Report_LblKpiStrip");
         LblTopClients = _locale.T("Report_LblTopClients");
         LblTopProducts = _locale.T("Report_LblTopProducts");
         LblStockAlerts = _locale.T("Report_LblStockAlerts");
@@ -106,20 +94,12 @@ public partial class ReportingViewModel : BaseViewModel
             return;
         }
 
-        if (_cachedData is not null)
-        {
-            ApplyData(_cachedData);
-            return;
-        }
-
         IsBusy = true;
         try
         {
             await Task.Yield();
 
             var data = await Task.Run(() => LoadDataAsync(cancellationToken), cancellationToken);
-
-            _cachedData = data;
             ApplyData(data);
         }
         catch (OperationCanceledException) { }
@@ -141,13 +121,6 @@ public partial class ReportingViewModel : BaseViewModel
         LineCaCurrent = data.LineCaCurrent;
         LineCaPrev = data.LineCaPrev;
         LineCaDelta = data.LineCaDelta;
-        KpiDevis30 = data.KpiDevis30;
-        KpiDevisExpire = data.KpiDevisExpire;
-        KpiBlMonth = data.KpiBlMonth;
-        KpiBc = data.KpiBc;
-        KpiBrMonth = data.KpiBrMonth;
-        KpiStock = data.KpiStock;
-        KpiEncours = data.KpiEncours;
 
         TopClients.Clear();
         foreach (var r in data.TopClients)
@@ -180,22 +153,10 @@ public partial class ReportingViewModel : BaseViewModel
         var startPrev = startCur.AddMonths(-1);
         var endCur = startCur.AddMonths(1);
         var endPrev = startCur;
-        var since30 = now.AddDays(-30);
-        var expireUntil = now.AddDays(14);
+        var blSince = startCur.AddMonths(-11);
 
         var caCur = await InvoiceTtcSumAsync(db, startCur, endCur, ct);
         var caPrev = await InvoiceTtcSumAsync(db, startPrev, endPrev, ct);
-
-        var devis30 = await db.Devis.AsNoTracking().CountAsync(d => d.Date >= since30, ct);
-        var devisExpire = await db.Devis.AsNoTracking().CountAsync(
-            d => d.DateValidite >= now && d.DateValidite <= expireUntil, ct);
-        var blMonth = await db.BonsLivraison.AsNoTracking().CountAsync(
-            b => b.Date >= startCur && b.Date < endCur, ct);
-        var bcMonth = await db.BonsCommande.AsNoTracking().CountAsync(
-            b => b.Date >= startCur && b.Date < endCur, ct);
-        var bcTotal = await db.BonsCommande.AsNoTracking().CountAsync(ct);
-        var brMonth = await db.BonsReception.AsNoTracking().CountAsync(
-            b => b.Date >= startCur && b.Date < endCur, ct);
 
         var yearStart = startCur.AddMonths(-11);
         var topClientAgg = (await db.Factures.AsNoTracking()
@@ -224,7 +185,6 @@ public partial class ReportingViewModel : BaseViewModel
                 share));
         }
 
-        var blSince = startCur.AddMonths(-11);
         var blLignes = await (
             from l in db.BonLivraisonLignes.AsNoTracking()
             join b in db.BonsLivraison.AsNoTracking() on l.BLId equals b.Id
@@ -266,11 +226,6 @@ public partial class ReportingViewModel : BaseViewModel
                     p.StockMinimum.ToString("N2", CultureInfo.CurrentCulture))));
         }
 
-        var actifs = await db.Produits.AsNoTracking().CountAsync(p => p.Actif, ct);
-        var sousMin = await db.Produits.AsNoTracking().CountAsync(
-            p => p.Actif && p.StockMinimum > 0 && p.StockActuel < p.StockMinimum, ct);
-        var pctSous = actifs > 0 ? (double)sousMin / actifs * 100.0 : 0;
-
         var unpaidProj = await db.Factures.AsNoTracking()
             .Where(f => !f.EstPayee)
             .Select(f => new {
@@ -283,16 +238,11 @@ public partial class ReportingViewModel : BaseViewModel
             .Take(200)
             .ToListAsync(ct);
 
-        decimal encoursTotal = 0;
-        var encoursCount = 0;
         var unpaidRows = new List<ReportUnpaidRow>();
         foreach (var f in unpaidProj)
         {
             var reste = f.TTC - f.Paye;
             if (reste <= 0.01m) continue;
-
-            encoursTotal += reste;
-            encoursCount++;
 
             var due = f.DateEcheance.Date;
             var daysFromDue = (now - due).Days;
@@ -328,13 +278,6 @@ public partial class ReportingViewModel : BaseViewModel
             LineCaCurrent = FormatCaLine(_locale, "Report_FmtCurrentMonth", caCur, dev),
             LineCaPrev = FormatCaLine(_locale, "Report_FmtPrevMonth", caPrev, dev),
             LineCaDelta = FormatCaDelta(caCur, caPrev, dev, _locale),
-            KpiDevis30 = _locale.Tf("Report_KpiDevis30", devis30.ToString(CultureInfo.CurrentCulture)),
-            KpiDevisExpire = _locale.Tf("Report_KpiDevisExpire", devisExpire.ToString(CultureInfo.CurrentCulture)),
-            KpiBlMonth = _locale.Tf("Report_KpiBlMonth", blMonth.ToString(CultureInfo.CurrentCulture)),
-            KpiBc = _locale.Tf("Report_KpiBc", bcMonth.ToString(CultureInfo.CurrentCulture), bcTotal.ToString(CultureInfo.CurrentCulture)),
-            KpiBrMonth = _locale.Tf("Report_KpiBrMonth", brMonth.ToString(CultureInfo.CurrentCulture)),
-            KpiStock = _locale.Tf("Report_KpiStock", actifs.ToString(CultureInfo.CurrentCulture), sousMin.ToString(CultureInfo.CurrentCulture), pctSous.ToString("F0", CultureInfo.CurrentCulture)),
-            KpiEncours = _locale.Tf("Report_KpiEncours", CurrencyHelper.Format(encoursTotal, dev), encoursCount.ToString(CultureInfo.CurrentCulture)),
             TopClients = topClientRows,
             TopProduits = topProdRows,
             StockAlertes = stockAlertRows,
@@ -376,13 +319,6 @@ internal sealed class ReportData
     public string LineCaCurrent { get; init; } = string.Empty;
     public string LineCaPrev { get; init; } = string.Empty;
     public string LineCaDelta { get; init; } = string.Empty;
-    public string KpiDevis30 { get; init; } = string.Empty;
-    public string KpiDevisExpire { get; init; } = string.Empty;
-    public string KpiBlMonth { get; init; } = string.Empty;
-    public string KpiBc { get; init; } = string.Empty;
-    public string KpiBrMonth { get; init; } = string.Empty;
-    public string KpiStock { get; init; } = string.Empty;
-    public string KpiEncours { get; init; } = string.Empty;
     public List<ReportRankRow> TopClients { get; init; } = [];
     public List<ReportRankRow> TopProduits { get; init; } = [];
     public List<ReportStockAlertRow> StockAlertes { get; init; } = [];

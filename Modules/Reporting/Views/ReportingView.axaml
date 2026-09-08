@@ -66,69 +66,6 @@
           </Grid>
         </StackPanel>
 
-        <!-- Chiffres clés -->
-        <StackPanel Spacing="12">
-          <StackPanel Spacing="6">
-            <TextBlock Text="{Binding LblKpiStrip}" FontWeight="SemiBold" FontSize="17"/>
-            <Border Height="3" Width="44" CornerRadius="2"
-                    Background="{DynamicResource CourseraPrimaryBrush}"
-                    HorizontalAlignment="Left"/>
-          </StackPanel>
-          <Grid ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto">
-            <Border Grid.Row="0" Grid.Column="0" Classes="report-shadow-soft"
-                    Background="{DynamicResource CourseraSurfaceBrush}"
-                    BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="12"
-                    MinHeight="112" Padding="16,16" Margin="0,0,5,5">
-              <TextBlock Text="{Binding KpiDevis30}" TextWrapping="Wrap" VerticalAlignment="Center"
-                         FontSize="16" LineHeight="24" FontWeight="SemiBold"/>
-            </Border>
-            <Border Grid.Row="0" Grid.Column="1" Classes="report-shadow-soft"
-                    Background="{DynamicResource CourseraSurfaceBrush}"
-                    BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="12"
-                    MinHeight="112" Padding="16,16" Margin="5,0,5,5">
-              <TextBlock Text="{Binding KpiDevisExpire}" TextWrapping="Wrap" VerticalAlignment="Center"
-                         FontSize="16" LineHeight="24" FontWeight="SemiBold"/>
-            </Border>
-            <Border Grid.Row="0" Grid.Column="2" Classes="report-shadow-soft"
-                    Background="{DynamicResource CourseraSurfaceBrush}"
-                    BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="12"
-                    MinHeight="112" Padding="16,16" Margin="5,0,5,5">
-              <TextBlock Text="{Binding KpiBlMonth}" TextWrapping="Wrap" VerticalAlignment="Center"
-                         FontSize="16" LineHeight="24" FontWeight="SemiBold"/>
-            </Border>
-            <Border Grid.Row="0" Grid.Column="3" Classes="report-shadow-soft"
-                    Background="{DynamicResource CourseraSurfaceBrush}"
-                    BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="12"
-                    MinHeight="112" Padding="16,16" Margin="5,0,0,5">
-              <TextBlock Text="{Binding KpiBc}" TextWrapping="Wrap" VerticalAlignment="Center"
-                         FontSize="16" LineHeight="24" FontWeight="SemiBold"/>
-            </Border>
-            <Border Grid.Row="1" Grid.Column="0" Classes="report-shadow-soft"
-                    Background="{DynamicResource CourseraSurfaceBrush}"
-                    BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="12"
-                    MinHeight="112" Padding="16,16" Margin="0,5,5,0">
-              <TextBlock Text="{Binding KpiBrMonth}" TextWrapping="Wrap" VerticalAlignment="Center"
-                         FontSize="16" LineHeight="24" FontWeight="SemiBold"/>
-            </Border>
-            <Border Grid.Row="1" Grid.Column="1" Classes="report-shadow-soft"
-                    Background="{DynamicResource CourseraSurfaceBrush}"
-                    BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="12"
-                    MinHeight="112" Padding="16,16" Margin="5,5,5,0">
-              <TextBlock Text="{Binding KpiEncours}" TextWrapping="Wrap" VerticalAlignment="Center"
-                         FontSize="16" LineHeight="24" FontWeight="SemiBold"/>
-            </Border>
-            <Border Grid.Row="1" Grid.Column="2" Classes="report-shadow-soft"
-                    Background="{DynamicResource CourseraSurfaceBrush}"
-                    BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="12"
-                    MinHeight="112" Padding="16,16" Margin="5,5,5,0">
-              <TextBlock Text="{Binding KpiStock}" TextWrapping="Wrap" VerticalAlignment="Center"
-                         FontSize="16" LineHeight="24" FontWeight="SemiBold"/>
-            </Border>
-            <!-- Spacer: keeps column widths aligned with row 1 -->
-            <Border Grid.Row="1" Grid.Column="3" Background="Transparent" IsHitTestVisible="False" Margin="5,5,0,0"/>
-          </Grid>
-        </StackPanel>
-
         <!-- Top 5 -->
         <Grid ColumnDefinitions="*,*">
           <Border Grid.Column="0" Classes="report-shadow-soft" Padding="18" Margin="0,0,8,0"
