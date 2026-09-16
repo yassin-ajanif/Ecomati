@@ -472,14 +472,14 @@ public sealed class ReportService : IReportService
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var produits = await db.Produits.AsNoTracking()
             .Where(p => p.StockActuel > 0)
-            .Select(p => new { p.StockActuel, p.PrixAchatHT, p.PrixVenteHT, p.TauxTVA })
+            .Select(p => new { p.StockActuel, p.PrixAchatHT, p.PrixVenteHT })
             .ToListAsync(ct);
 
         decimal totalHt = 0, totalTtc = 0;
         foreach (var p in produits)
         {
             totalHt += p.StockActuel * p.PrixAchatHT;
-            totalTtc += p.StockActuel * p.PrixVenteHT * (1 + p.TauxTVA / 100m);
+            totalTtc += p.StockActuel * p.PrixVenteHT;
         }
         return (totalHt, totalTtc, dev);
     }

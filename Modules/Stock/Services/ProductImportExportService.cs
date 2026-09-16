@@ -34,14 +34,14 @@ public sealed class ProductImportExportService : IProductImportExportService
 
         var fr = CultureInfo.GetCultureInfo("fr-FR");
         var sb = new StringBuilder();
-        sb.AppendLine("Reference;CodeBarre;Designation;Unite;PrixAchatHT;PrixVenteHT;TauxTVA;StockActuel;StockMinimum;Categorie;Actif");
+        sb.AppendLine("Reference;CodeBarre;Designation;Unite;PrixAchat;PrixVente;StockActuel;StockMinimum;Categorie;Actif");
 
         foreach (var p in products)
         {
             var cat = p.Categorie?.Nom ?? "";
             sb.AppendLine(
                 $"{EscapeCsv(p.Reference)};{EscapeCsv(p.CodeBarre ?? "")};{EscapeCsv(p.Designation)};{EscapeCsv(p.Unite)};" +
-                $"{p.PrixAchatHT.ToString("N2", fr)};{p.PrixVenteHT.ToString("N2", fr)};{p.TauxTVA.ToString("N2", fr)};" +
+                $"{p.PrixAchatHT.ToString("N2", fr)};{p.PrixVenteHT.ToString("N2", fr)};" +
                 $"{p.StockActuel.ToString("N2", fr)};{p.StockMinimum.ToString("N2", fr)};{EscapeCsv(cat)};{(p.Actif ? "Oui" : "Non")}");
         }
 
@@ -71,7 +71,7 @@ public sealed class ProductImportExportService : IProductImportExportService
             try
             {
                 var cols = SplitCsvLine(lines[i]);
-                if (cols.Length < 11) { errors++; continue; }
+                if (cols.Length < 10) { errors++; continue; }
 
                 var reference = cols[0].Trim();
                 if (string.IsNullOrWhiteSpace(reference)) { errors++; continue; }
@@ -81,11 +81,10 @@ public sealed class ProductImportExportService : IProductImportExportService
                 var unite = cols[3].Trim();
                 var prixAchatHt = decimal.Parse(cols[4].Trim(), NumberStyles.Any, fr);
                 var prixVenteHt = decimal.Parse(cols[5].Trim(), NumberStyles.Any, fr);
-                var tauxTva = decimal.Parse(cols[6].Trim(), NumberStyles.Any, fr);
-                var stockActuel = decimal.Parse(cols[7].Trim(), NumberStyles.Any, fr);
-                var stockMin = decimal.Parse(cols[8].Trim(), NumberStyles.Any, fr);
-                var categorieNom = cols[9].Trim();
-                var actif = cols[10].Trim().Equals("Oui", StringComparison.OrdinalIgnoreCase);
+                var stockActuel = decimal.Parse(cols[6].Trim(), NumberStyles.Any, fr);
+                var stockMin = decimal.Parse(cols[7].Trim(), NumberStyles.Any, fr);
+                var categorieNom = cols[8].Trim();
+                var actif = cols[9].Trim().Equals("Oui", StringComparison.OrdinalIgnoreCase);
 
                 int? categorieId = null;
                 if (!string.IsNullOrWhiteSpace(categorieNom))
@@ -109,7 +108,6 @@ public sealed class ProductImportExportService : IProductImportExportService
                     existing.Unite = unite;
                     existing.PrixAchatHT = prixAchatHt;
                     existing.PrixVenteHT = prixVenteHt;
-                    existing.TauxTVA = tauxTva;
                     existing.StockMinimum = stockMin;
                     existing.CategorieId = categorieId;
                     existing.Actif = actif;
@@ -141,7 +139,6 @@ public sealed class ProductImportExportService : IProductImportExportService
                         Unite = unite,
                         PrixAchatHT = prixAchatHt,
                         PrixVenteHT = prixVenteHt,
-                        TauxTVA = tauxTva,
                         StockActuel = 0,
                         StockMinimum = stockMin,
                         CategorieId = categorieId,

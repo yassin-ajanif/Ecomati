@@ -103,7 +103,7 @@ public class PerformanceTestService
         for (var i = 0; i < ProductCount; i += batch)
         {
             var sb = new System.Text.StringBuilder();
-            sb.Append("INSERT INTO Produits (Id,CreatedAt,UpdatedAt,Reference,CodeBarre,Designation,Unite,PrixAchatHT,PrixVenteHT,TauxTVA,StockActuel,StockMinimum,Actif) VALUES ");
+            sb.Append("INSERT INTO Produits (Id,CreatedAt,UpdatedAt,Reference,CodeBarre,Designation,Unite,PrixAchatHT,PrixVenteHT,StockActuel,StockMinimum,Actif) VALUES ");
             var end = Math.Min(i + batch, ProductCount);
             for (var j = i; j < end; j++)
             {
@@ -111,9 +111,8 @@ public class PerformanceTestService
                 var desig = $"{designs[j % designs.Length]} #{j}";
                 var pa = Rng.Next(500, 500_000) / 100m;
                 var pv = pa + Rng.Next(200, 300_000) / 100m;
-                var tva = Rng.NextDouble() < 0.7 ? 20m : Rng.NextDouble() < 0.5 ? 14m : 10m;
                 if (j > i) sb.Append(',');
-                sb.Append(CultureInfo.InvariantCulture, $"({id},'{now}','{now}','PROD-{j:D5}',NULL,'{Escape(desig)}','U',{pa:F2},{pv:F2},{tva:F1},{InitialProductStock},{Rng.Next(0,51)},1)");
+                sb.Append(CultureInfo.InvariantCulture, $"({id},'{now}','{now}','PROD-{j:D5}',NULL,'{Escape(desig)}','U',{pa:F2},{pv:F2},{InitialProductStock},{Rng.Next(0,51)},1)");
             }
             await ExecAsync(conn, sb.ToString(), ct);
         }

@@ -32,7 +32,7 @@ public partial class BRLineRow : ObservableObject
         Designation = p.Designation;
         Conditionnement = p.Unite;
         PrixUnitaireHt = p.PrixAchatHT;
-        TauxTva = p.TauxTVA;
+        TauxTva = 0;
         NotifyMontants();
     }
 

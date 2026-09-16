@@ -64,9 +64,6 @@ public partial class ProduitsViewModel : BaseViewModel
     [ObservableProperty] private string _lblStockActuel = string.Empty;
     [ObservableProperty] private string _lblPrixAchat = string.Empty;
     [ObservableProperty] private string _lblPrixVente = string.Empty;
-    [ObservableProperty] private string _lblPrixAchatTtc = string.Empty;
-    [ObservableProperty] private string _lblPrixVenteTtc = string.Empty;
-    [ObservableProperty] private string _lblTva = string.Empty;
     [ObservableProperty] private string _lblStockMin = string.Empty;
     [ObservableProperty] private string _lblPhoto = string.Empty;
     [ObservableProperty] private string _btnChooseImage = string.Empty;
@@ -97,11 +94,8 @@ public partial class ProduitsViewModel : BaseViewModel
         LblBarcode = _locale.T("Lbl_BarcodeField");
         LblUnite = _locale.T("Lbl_Unite");
         LblStockActuel = _locale.T("Lbl_StockActuelRo");
-        LblPrixAchat = _locale.T("Lbl_PrixAchatHt");
-        LblPrixVente = _locale.T("Lbl_PrixVenteHt");
-        LblPrixAchatTtc = _locale.T("Lbl_PrixAchatTtc");
-        LblPrixVenteTtc = _locale.T("Lbl_PrixVenteTtc");
-        LblTva = _locale.T("Lbl_TvaPctField");
+        LblPrixAchat = _locale.T("Lbl_PrixUnitaire");
+        LblPrixVente = _locale.T("Lbl_PrixDeVente");
         LblStockMin = _locale.T("Lbl_StockMinField");
         LblPhoto = _locale.T("Lbl_ProductPhoto");
         BtnChooseImage = _locale.T("Btn_ChooseImageDots");
@@ -145,63 +139,6 @@ public partial class ProduitsViewModel : BaseViewModel
     [ObservableProperty] private string _ficheUnite = "U";
     [ObservableProperty] private decimal _fichePrixAchatHt;
     [ObservableProperty] private decimal _fichePrixVenteHt;
-    [ObservableProperty] private decimal _ficheTauxTva = 20;
-    [ObservableProperty] private decimal _fichePrixAchatTtc;
-    [ObservableProperty] private decimal _fichePrixVenteTtc;
-
-    private bool _syncingTtc;
-
-    partial void OnFichePrixAchatHtChanged(decimal value)
-    {
-        if (!_syncingTtc)
-        {
-            _syncingTtc = true;
-            FichePrixAchatTtc = value * (1 + FicheTauxTva / 100m);
-            _syncingTtc = false;
-        }
-    }
-
-    partial void OnFichePrixVenteHtChanged(decimal value)
-    {
-        if (!_syncingTtc)
-        {
-            _syncingTtc = true;
-            FichePrixVenteTtc = value * (1 + FicheTauxTva / 100m);
-            _syncingTtc = false;
-        }
-    }
-
-    partial void OnFichePrixAchatTtcChanged(decimal value)
-    {
-        if (!_syncingTtc && FicheTauxTva > 0)
-        {
-            _syncingTtc = true;
-            FichePrixAchatHt = value / (1 + FicheTauxTva / 100m);
-            _syncingTtc = false;
-        }
-    }
-
-    partial void OnFichePrixVenteTtcChanged(decimal value)
-    {
-        if (!_syncingTtc && FicheTauxTva > 0)
-        {
-            _syncingTtc = true;
-            FichePrixVenteHt = value / (1 + FicheTauxTva / 100m);
-            _syncingTtc = false;
-        }
-    }
-
-    partial void OnFicheTauxTvaChanged(decimal value)
-    {
-        if (!_syncingTtc)
-        {
-            _syncingTtc = true;
-            FichePrixAchatTtc = FichePrixAchatHt * (1 + value / 100m);
-            FichePrixVenteTtc = FichePrixVenteHt * (1 + value / 100m);
-            _syncingTtc = false;
-        }
-    }
-
     [ObservableProperty] private decimal _ficheStockMinimum;
     [ObservableProperty] private decimal _ficheStockActuel;
     [ObservableProperty] private bool _ficheActif = true;
@@ -254,7 +191,6 @@ public partial class ProduitsViewModel : BaseViewModel
         FicheUnite = "U";
         FichePrixAchatHt = 0;
         FichePrixVenteHt = 0;
-        FicheTauxTva = 20;
         FicheStockMinimum = 0;
         FicheStockActuel = 0;
         FicheActif = true;
@@ -452,7 +388,6 @@ public partial class ProduitsViewModel : BaseViewModel
             FicheUnite = "U";
             FichePrixAchatHt = 0;
             FichePrixVenteHt = 0;
-            FicheTauxTva = 20;
             FicheStockMinimum = 0;
             FicheStockActuel = 0;
             FicheActif = true;
@@ -465,7 +400,6 @@ public partial class ProduitsViewModel : BaseViewModel
         FicheUnite = string.IsNullOrWhiteSpace(p.Unite) ? "U" : p.Unite;
         FichePrixAchatHt = p.PrixAchatHT;
         FichePrixVenteHt = p.PrixVenteHT;
-        FicheTauxTva = p.TauxTVA;
         FicheStockMinimum = p.StockMinimum;
         FicheStockActuel = p.StockActuel;
         FicheActif = p.Actif;
@@ -576,7 +510,6 @@ public partial class ProduitsViewModel : BaseViewModel
                     Unite = string.IsNullOrWhiteSpace(FicheUnite) ? "U" : FicheUnite.Trim(),
                     PrixAchatHT = FichePrixAchatHt,
                     PrixVenteHT = FichePrixVenteHt,
-                    TauxTVA = FicheTauxTva,
                     StockActuel = 0,
                     StockMinimum = FicheStockMinimum,
                     Actif = FicheActif,
@@ -632,7 +565,6 @@ public partial class ProduitsViewModel : BaseViewModel
             entityUpdate.Unite = string.IsNullOrWhiteSpace(FicheUnite) ? "U" : FicheUnite.Trim();
             entityUpdate.PrixAchatHT = FichePrixAchatHt;
             entityUpdate.PrixVenteHT = FichePrixVenteHt;
-            entityUpdate.TauxTVA = FicheTauxTva;
             entityUpdate.StockMinimum = FicheStockMinimum;
             entityUpdate.Actif = FicheActif;
 

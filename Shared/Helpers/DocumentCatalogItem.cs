@@ -35,7 +35,7 @@ public sealed class DocumentCatalogItem
         Unite = p.Unite,
         PrixVenteHT = p.PrixVenteHT,
         PrixAchatHT = p.PrixAchatHT,
-        TauxTVA = p.TauxTVA,
+        TauxTVA = 0,
         ImageData = p.ImageData
     };
 

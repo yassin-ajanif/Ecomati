@@ -11,7 +11,6 @@ public class Produit : BaseEntity
     public string Unite { get; set; } = "U";
     public decimal PrixAchatHT { get; set; }
     public decimal PrixVenteHT { get; set; }
-    public decimal TauxTVA { get; set; }
     public decimal StockActuel { get; set; }
     public decimal StockMinimum { get; set; }
     public int? CategorieId { get; set; }

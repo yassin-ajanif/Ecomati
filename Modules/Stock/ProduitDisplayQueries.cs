@@ -37,7 +37,6 @@ public static class ProduitDisplayQueries
                 Unite = p.Unite,
                 PrixAchatHT = p.PrixAchatHT,
                 PrixVenteHT = p.PrixVenteHT,
-                TauxTVA = p.TauxTVA,
                 StockActuel = p.StockActuel,
                 StockMinimum = p.StockMinimum,
                 CategorieId = p.CategorieId,

@@ -117,24 +117,13 @@
               <TextBlock Text="{Binding LblPrixAchat}" FontWeight="SemiBold" FontSize="12"/>
               <NumericUpDown Value="{Binding FichePrixAchatHt}" FormatString="N2" Minimum="0"
                              IsEnabled="{Binding FicheEditable}"/>
-              <TextBlock Text="{Binding LblPrixAchatTtc}" FontWeight="SemiBold" FontSize="11" Opacity="0.7" Margin="0,2,0,0"/>
-              <NumericUpDown Value="{Binding FichePrixAchatTtc}" FormatString="N2" Minimum="0"
-                             IsEnabled="{Binding FicheEditable}"/>
             </StackPanel>
             <StackPanel Grid.Row="3" Grid.Column="1" Margin="16,6,0,0" Spacing="4">
               <TextBlock Text="{Binding LblPrixVente}" FontWeight="SemiBold" FontSize="12"/>
               <NumericUpDown Value="{Binding FichePrixVenteHt}" FormatString="N2" Minimum="0"
                              IsEnabled="{Binding FicheEditable}"/>
-              <TextBlock Text="{Binding LblPrixVenteTtc}" FontWeight="SemiBold" FontSize="11" Opacity="0.7" Margin="0,2,0,0"/>
-              <NumericUpDown Value="{Binding FichePrixVenteTtc}" FormatString="N2" Minimum="0"
-                             IsEnabled="{Binding FicheEditable}"/>
             </StackPanel>
             <StackPanel Grid.Row="4" Margin="0,6,0,0" Spacing="4">
-              <TextBlock Text="{Binding LblTva}" FontWeight="SemiBold" FontSize="12"/>
-              <NumericUpDown Value="{Binding FicheTauxTva}" FormatString="N2" Minimum="0"
-                             IsEnabled="{Binding FicheEditable}"/>
-            </StackPanel>
-            <StackPanel Grid.Row="4" Grid.Column="1" Margin="16,6,0,0" Spacing="4">
               <TextBlock Text="{Binding LblStockMin}" FontWeight="SemiBold" FontSize="12"/>
               <NumericUpDown Value="{Binding FicheStockMinimum}" FormatString="N2" Minimum="0"
                              IsEnabled="{Binding FicheEditable}"/>

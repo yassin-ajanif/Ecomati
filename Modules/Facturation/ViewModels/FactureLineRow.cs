@@ -27,7 +27,7 @@ public partial class FactureLineRow : ObservableObject
         ServiceId = null;
         Designation = p.Designation;
         Conditionnement = p.Unite;
-        PrixUnitaireHt = Math.Round(p.PrixVenteHT * (1 + p.TauxTVA / 100m), 2);
+        PrixUnitaireHt = p.PrixVenteHT;
         NotifyMontants();
     }
 

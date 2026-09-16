@@ -36,7 +36,7 @@ public partial class FactureFournisseurLineRow : ObservableObject
         Designation = p.Designation;
         Conditionnement = p.Unite;
         PrixUnitaireHt = p.PrixAchatHT;
-        TauxTva = p.TauxTVA;
+        TauxTva = 0;
         NotifyMontants();
     }
 

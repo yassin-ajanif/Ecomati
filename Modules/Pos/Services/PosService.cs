@@ -76,7 +76,6 @@ public sealed class PosService : IPosService
                     Unite = p.Unite,
                     PrixAchatHT = p.PrixAchatHT,
                     PrixVenteHT = p.PrixVenteHT,
-                    TauxTVA = p.TauxTVA,
                     Actif = p.Actif,
                     ImageData = p.ImageData
                 })
