@@ -51,11 +51,13 @@ public sealed class ReportSaleByCustomerProductRow
         Quantite = quantite;
         TotalHt = totalHt;
         TotalTtc = totalTtc;
+        UnitPrice = quantite > 0 ? totalTtc / quantite : 0;
         Profit = profit;
         MarginPct = marginPct;
         Devise = devise;
-        LblQty = quantite.ToString("N2");
+        LblQty = FormatQty(quantite);
         LblHt = $"{totalHt:N2} {devise}";
+        LblUnitPrice = $"{UnitPrice:N2} {devise}";
         LblTtc = $"{totalTtc:N2} {devise}";
         LblProfit = $"{profit:N2} {devise}";
         LblMargin = $"{marginPct:N1}%";
@@ -64,6 +66,7 @@ public sealed class ReportSaleByCustomerProductRow
     public string Reference { get; }
     public string Designation { get; }
     public decimal Quantite { get; }
+    public decimal UnitPrice { get; }
     public decimal TotalHt { get; }
     public decimal TotalTtc { get; }
     public decimal Profit { get; }
@@ -71,9 +74,13 @@ public sealed class ReportSaleByCustomerProductRow
     public string Devise { get; }
     public string LblQty { get; }
     public string LblHt { get; }
+    public string LblUnitPrice { get; }
     public string LblTtc { get; }
     public string LblProfit { get; }
     public string LblMargin { get; }
+
+    internal static string FormatQty(decimal qty) =>
+        qty == decimal.Truncate(qty) ? qty.ToString("N0") : qty.ToString("N2");
 }
 
 public sealed partial class ReportSaleByCustomerRow : ObservableObject

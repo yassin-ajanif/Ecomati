@@ -73,6 +73,9 @@ public partial class ReportsListViewModel : BaseViewModel
     [ObservableProperty] private string _wmSaleByCustomerClient = string.Empty;
     [ObservableProperty] private string _lblSaleByCustomerClient = string.Empty;
     [ObservableProperty] private string _btnClearSaleByCustomerClient = string.Empty;
+    [ObservableProperty] private string _colCustomerQty = string.Empty;
+    [ObservableProperty] private string _colCustomerUnitPrice = string.Empty;
+    [ObservableProperty] private string _colCustomerMarginPct = string.Empty;
     [ObservableProperty] private TiersEntity? _selectedSaleByCustomerClient;
 
     [ObservableProperty] private int _selectedReportIndex;
@@ -194,6 +197,9 @@ public partial class ReportsListViewModel : BaseViewModel
         WmSaleByCustomerClient = _locale.T("Wm_SearchClient");
         LblSaleByCustomerClient = _locale.T("Lbl_Client");
         BtnClearSaleByCustomerClient = _locale.T("Reports_BtnClearClient");
+        ColCustomerQty = _locale.T("Lbl_Quantity");
+        ColCustomerUnitPrice = _locale.T("Reports_ColUnitPrice");
+        ColCustomerMarginPct = _locale.T("Reports_ColMarginPct");
         EmptyMessage = _locale.T("Reports_Empty");
         LblSaleByCustomerLabelHt = _locale.T("Reports_LblTotalHt");
         LblSaleByCustomerLabelTtc = _locale.T("Reports_LblTotalTtc");
@@ -579,9 +585,9 @@ public partial class ReportsListViewModel : BaseViewModel
         var rows = new List<ReportPdfRow>();
         foreach (var r in _filteredSalesByCustomer)
         {
-            rows.Add(PdfRow(r.Client, r.LblTtc, r.LblProfit, r.LblMargin));
+            rows.Add(PdfRow(r.Client, "", "", r.LblTtc, r.LblProfit, r.LblMargin));
             foreach (var p in r.Products)
-                rows.Add(PdfDetailRow($"  • {p.Reference} {p.Designation}", p.LblTtc, p.LblProfit, p.LblMargin));
+                rows.Add(PdfDetailRow($"  • {p.Reference} {p.Designation}", p.LblQty, p.LblUnitPrice, p.LblTtc, p.LblProfit, p.LblMargin));
         }
 
         return new ReportPdfModel
@@ -591,6 +597,8 @@ public partial class ReportsListViewModel : BaseViewModel
             Columns =
             [
                 new(_locale.T("Lbl_Client"), 2.2f),
+                new(_locale.T("Lbl_Quantity"), 0.7f, right),
+                new(_locale.T("Reports_ColUnitPrice"), 1.1f, right),
                 new(totalLabel, 1.1f, right),
                 new(_locale.T("Reports_LblProfit"), 1.1f, right),
                 new(_locale.T("Reports_ColMarginPct"), 0.8f, right)

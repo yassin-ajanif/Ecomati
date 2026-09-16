@@ -192,6 +192,23 @@
 
                         <!-- Expanded sub-products -->
                         <StackPanel IsVisible="{Binding IsExpanded}" Margin="28,8,0,0" Spacing="3">
+                          <Grid ColumnDefinitions="2*,1*,1*,1*,1*,1*" Margin="8,0,8,2">
+                            <TextBlock Grid.Column="1" Text="{Binding DataContext.ColCustomerQty, ElementName=ThisControl}"
+                                       FontSize="11" FontWeight="SemiBold" Classes="subtle"
+                                       HorizontalAlignment="Right"/>
+                            <TextBlock Grid.Column="2" Text="{Binding DataContext.ColCustomerUnitPrice, ElementName=ThisControl}"
+                                       FontSize="11" FontWeight="SemiBold" Classes="subtle"
+                                       HorizontalAlignment="Right"/>
+                            <TextBlock Grid.Column="3" Text="{Binding DataContext.LblSaleByCustomerLabelTtc, ElementName=ThisControl}"
+                                       FontSize="11" FontWeight="SemiBold" Classes="subtle"
+                                       HorizontalAlignment="Right"/>
+                            <TextBlock Grid.Column="4" Text="{Binding DataContext.LblSaleByCustomerLabelProfit, ElementName=ThisControl}"
+                                       FontSize="11" FontWeight="SemiBold" Classes="subtle"
+                                       HorizontalAlignment="Right"/>
+                            <TextBlock Grid.Column="5" Text="{Binding DataContext.ColCustomerMarginPct, ElementName=ThisControl}"
+                                       FontSize="11" FontWeight="SemiBold" Classes="subtle"
+                                       HorizontalAlignment="Right"/>
+                          </Grid>
                           <ItemsControl ItemsSource="{Binding Products}">
                             <ItemsControl.ItemTemplate>
                               <DataTemplate x:DataType="vm:ReportSaleByCustomerProductRow">
@@ -204,7 +221,7 @@
                                     </StackPanel>
                                     <TextBlock Grid.Column="1" Text="{Binding LblQty}" FontSize="12"
                                                VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                    <TextBlock Grid.Column="2" Text="{Binding LblHt}" FontSize="12"
+                                    <TextBlock Grid.Column="2" Text="{Binding LblUnitPrice}" FontSize="12"
                                                VerticalAlignment="Center" HorizontalAlignment="Right"
                                                Classes="subtle"/>
                                     <TextBlock Grid.Column="3" Text="{Binding LblTtc}" FontSize="12"
