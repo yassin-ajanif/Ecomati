@@ -1,5 +1,4 @@
 using GestionCommerciale.Modules.Facturation.Models;
-using GestionCommerciale.Modules.Livraison.Models;
 using GestionCommerciale.Modules.Pos.Models;
 using GestionCommerciale.Modules.Services;
 using GestionCommerciale.Modules.Stock;
@@ -180,37 +179,6 @@ public sealed class PosService : IPosService
 
         var numero = "POS-" + DateTime.Now.ToString("yyyyMMdd-HHmmss");
 
-        var bl = new BonLivraison
-        {
-            Numero = numero,
-            ClientId = clientId,
-            Date = DateTime.Today,
-            Note = "Vente POS"
-        };
-        db.BonsLivraison.Add(bl);
-        await db.SaveChangesAsync(cancellationToken);
-
-        foreach (var line in cart)
-        {
-            db.BonLivraisonLignes.Add(new BonLivraisonLigne
-            {
-                BLId = bl.Id,
-                ProduitId = line.IsService ? null : line.ProduitId,
-                ServiceId = line.IsService ? line.ServiceId : null,
-                Designation = line.Designation,
-                QuantiteCommandee = line.Quantite,
-                QuantiteLivree = line.Quantite,
-                PrixUnitaireHT = line.PrixUnitaireHt,
-                TauxTVA = line.TauxTva
-            });
-        }
-        await db.SaveChangesAsync(cancellationToken);
-
-        await _stock.ResyncBonLivraisonStockAsync(
-            db, bl.Id, bl.Numero,
-            cart.Where(l => l.ProduitId is > 0).Select(l => (l.ProduitId!.Value, l.Quantite)),
-            null, cancellationToken);
-
         var facture = new Facture
         {
             Numero = numero,
@@ -222,9 +190,6 @@ public sealed class PosService : IPosService
             Note = "Vente POS"
         };
         db.Factures.Add(facture);
-        await db.SaveChangesAsync(cancellationToken);
-
-        bl.FactureId = facture.Id;
         await db.SaveChangesAsync(cancellationToken);
 
         foreach (var line in cart)
@@ -251,6 +216,15 @@ public sealed class PosService : IPosService
                 TauxTVA = line.TauxTva
             }),
             remiseGlobale);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await _stock.SyncFactureStockAsync(
+            db,
+            facture.Id,
+            facture.Numero,
+            cart.Where(l => l.ProduitId is > 0).Select(l => (l.ProduitId!.Value, l.Quantite)),
+            null,
+            cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
 
         foreach (var (mode, montant) in payments.Where(p => p.Montant > 0))

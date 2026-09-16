@@ -1,10 +1,7 @@
 using GestionCommerciale.Modules.AvoirFournisseur.Models;
-using GestionCommerciale.Modules.CommandeClient.Models;
 using GestionCommerciale.Modules.CommandeFournisseur.Models;
-using GestionCommerciale.Modules.Devis.Models;
 using GestionCommerciale.Modules.Facturation.Models;
 using GestionCommerciale.Modules.FactureFournisseur.Models;
-using GestionCommerciale.Modules.Livraison.Models;
 using GestionCommerciale.Modules.Reception.Models;
 
 namespace GestionCommerciale.Shared.Helpers;
@@ -31,26 +28,6 @@ public static class DocumentTotalsHelper
 
     public static decimal LigneHT(decimal qte, decimal puHt, decimal remisePct) =>
         qte * puHt * (1 - remisePct / 100m);
-
-    public static (decimal ht, decimal tva, decimal ttc) DevisTotals(IEnumerable<DevisLigne> lignes, decimal remiseGlobalePct)
-    {
-        decimal ht = 0, tva = 0;
-        foreach (var l in lignes)
-        {
-            var lht = LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise);
-            ht += lht;
-            tva += lht * (l.TauxTVA / 100m);
-        }
-
-        if (remiseGlobalePct > 0)
-        {
-            var factor = 1 - remiseGlobalePct / 100m;
-            ht *= factor;
-            tva *= factor;
-        }
-
-        return (ht, tva, ht + tva);
-    }
 
     public static (decimal ht, decimal tva, decimal ttc) FactureTotals(IEnumerable<FactureLigne> lignes, decimal remiseGlobalePct)
     {
@@ -136,36 +113,8 @@ public static class DocumentTotalsHelper
         return (ht, tva, ht + tva);
     }
 
-    /// <summary>Same semantics as <c>BLEditViewModel.RefreshTotals</c> (TVA included in TTC).</summary>
-    public static (decimal ht, decimal tva, decimal ttc) BonLivraisonTotals(IEnumerable<BonLivraisonLigne> lignes)
-    {
-        decimal ht = 0, tva = 0;
-        foreach (var l in lignes)
-        {
-            var lht = LigneHT(l.QuantiteLivree, l.PrixUnitaireHT, l.Remise);
-            ht += lht;
-            tva += lht * (l.TauxTVA / 100m);
-        }
-
-        return (ht, tva, ht + tva);
-    }
-
     /// <summary>Same semantics as <c>BCEditViewModel.RefreshTotals</c> when TVA columns are shown.</summary>
     public static (decimal ht, decimal tva, decimal ttc) BonCommandeTotals(IEnumerable<BonCommandeLigne> lignes)
-    {
-        decimal ht = 0, tva = 0;
-        foreach (var l in lignes)
-        {
-            var lht = LigneHT(l.QuantiteCommandee, l.PrixUnitaireHT, l.Remise);
-            ht += lht;
-            tva += lht * (l.TauxTVA / 100m);
-        }
-
-        return (ht, tva, ht + tva);
-    }
-
-    /// <summary>Same semantics as <c>BCVEditViewModel.RefreshTotals</c> when TVA columns are shown.</summary>
-    public static (decimal ht, decimal tva, decimal ttc) BonCommandeClientTotals(IEnumerable<BonCommandeClientLigne> lignes)
     {
         decimal ht = 0, tva = 0;
         foreach (var l in lignes)

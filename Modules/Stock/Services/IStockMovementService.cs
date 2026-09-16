@@ -5,7 +5,7 @@ namespace GestionCommerciale.Modules.Stock.Services;
 
 public interface IStockMovementService
 {
-    Task ApplyMovementAsync(
+        Task ApplyMovementAsync(
         AppDbContext db,
         int produitId,
         TypeMouvement type,
@@ -16,11 +16,11 @@ public interface IStockMovementService
         int? createdByUserId,
         CancellationToken cancellationToken = default);
 
-    Task ResyncBonLivraisonStockAsync(
+    Task SyncFactureStockAsync(
         AppDbContext db,
-        int bonLivraisonId,
+        int factureId,
         string noteDetail,
-        IEnumerable<(int ProduitId, decimal QuantiteLivree)> lines,
+        IEnumerable<(int ProduitId, decimal Quantite)> lines,
         int? createdByUserId,
         CancellationToken cancellationToken = default);
 

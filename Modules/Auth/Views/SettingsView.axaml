@@ -63,13 +63,7 @@
       </StackPanel>
 
       <StackPanel Spacing="4">
-        <TextBlock Text="{Binding LblBl}" FontWeight="SemiBold"/>
         <CheckBox Content="{Binding LblBlocageStock}" IsChecked="{Binding BlocageStock}"/>
-      </StackPanel>
-
-      <StackPanel Spacing="4">
-        <TextBlock Text="{Binding LblDevisJours}" FontWeight="SemiBold"/>
-        <NumericUpDown Minimum="1" Maximum="365" Value="{Binding DevisValiditeJours}"/>
       </StackPanel>
       <StackPanel Spacing="4">
         <CheckBox Content="{Binding LblEnableVirtualKeyboard}" IsChecked="{Binding EnableVirtualKeyboard}"/>

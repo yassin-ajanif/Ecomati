@@ -54,7 +54,6 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private string _tauxTvaText = "20";
     [ObservableProperty] private bool _blocageStock = true;
     [ObservableProperty] private bool _enableVirtualKeyboard;
-    [ObservableProperty] private int _devisValiditeJours = 30;
     [ObservableProperty] private string _devise = "MAD";
     [ObservableProperty] private UiLanguageOption? _selectedLanguageOption;
 
@@ -67,9 +66,7 @@ public partial class SettingsViewModel : BaseViewModel
     [ObservableProperty] private string _lblLogo = string.Empty;
     [ObservableProperty] private string _lblPickLogo = string.Empty;
     [ObservableProperty] private string _lblTva = string.Empty;
-    [ObservableProperty] private string _lblBl = string.Empty;
     [ObservableProperty] private string _lblBlocageStock = string.Empty;
-    [ObservableProperty] private string _lblDevisJours = string.Empty;
     [ObservableProperty] private string _lblEnableVirtualKeyboard = string.Empty;
     [ObservableProperty] private string _lblDevise = string.Empty;
     [ObservableProperty] private string _lblUiLanguage = string.Empty;
@@ -143,9 +140,7 @@ public partial class SettingsViewModel : BaseViewModel
         LblLogo = _locale.T("Settings_Logo");
         LblPickLogo = _locale.T("Settings_PickLogo");
         LblTva = _locale.T("Settings_Tva");
-        LblBl = _locale.T("Settings_BL");
         LblBlocageStock = _locale.T("Settings_BlocageStock");
-        LblDevisJours = _locale.T("Settings_DevisJours");
         LblEnableVirtualKeyboard = _locale.T("Settings_EnableVirtualKeyboard");
         LblDevise = _locale.T("Settings_Devise");
         LblUiLanguage = _locale.T("Settings_UiLanguage");
@@ -229,7 +224,6 @@ public partial class SettingsViewModel : BaseViewModel
         SocieteLogoPath = row.SocieteLogoPath;
         BlocageStock = row.BlocageSiStockInsuffisant;
         EnableVirtualKeyboard = row.EnableVirtualKeyboard;
-        DevisValiditeJours = row.DevisValiditeJoursDefaut;
         Devise = row.Devise;
         SelectedLanguageOption = LanguageOptions.FirstOrDefault(o =>
                                      string.Equals(o.Code, row.UiLanguage, StringComparison.OrdinalIgnoreCase))
@@ -292,7 +286,6 @@ public partial class SettingsViewModel : BaseViewModel
             TauxTVAJson = JsonSerializer.Serialize(taux),
             BlocageSiStockInsuffisant = BlocageStock,
             EnableVirtualKeyboard = EnableVirtualKeyboard,
-            DevisValiditeJoursDefaut = DevisValiditeJours,
             Devise = Devise,
             UiLanguage = lang,
             BackupEnabled = BackupEnabled,

@@ -13,8 +13,6 @@ public sealed class CurrentUserSession : ICurrentUserSession
     public bool CanAccessClients => IsAuthenticated && Role is Models.Role.Admin or Models.Role.Commercial;
     public bool CanAccessFournisseurs => IsAuthenticated && Role is Models.Role.Admin or Models.Role.Magasinier;
     public bool CanAccessStock => IsAuthenticated && Role is Models.Role.Admin or Models.Role.Magasinier;
-    public bool CanAccessDevis => IsAuthenticated && Role is Models.Role.Admin or Models.Role.Commercial;
-    public bool CanAccessBL => IsAuthenticated && Role is Models.Role.Admin or Models.Role.Commercial or Models.Role.Magasinier;
     public bool CanAccessBR => IsAuthenticated && Role is Models.Role.Admin or Models.Role.Magasinier;
     public bool CanAccessBC => IsAuthenticated && Role is Models.Role.Admin or Models.Role.Magasinier;
     public bool CanAccessFacturation => IsAuthenticated && Role is Models.Role.Admin or Models.Role.Comptable;

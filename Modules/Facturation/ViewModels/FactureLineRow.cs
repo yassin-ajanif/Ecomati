@@ -7,7 +7,6 @@ namespace GestionCommerciale.Modules.Facturation.ViewModels;
 
 public partial class FactureLineRow : ObservableObject
 {
-    [ObservableProperty] private int? _bonLivraisonId;
     [ObservableProperty] private int? _produitId;
     [ObservableProperty] private int? _serviceId;
     [ObservableProperty] private string _reference = string.Empty;

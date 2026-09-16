@@ -225,8 +225,8 @@ public partial class StockMainViewModel : BaseViewModel
     {
         if (movements.Count == 0) return;
 
-        var blIds = movements
-            .Where(m => m.OrigineType == StockMovementService.OrigineTypeBonLivraison && m.OrigineId.HasValue)
+        var factureIds = movements
+            .Where(m => m.OrigineType == StockMovementService.OrigineTypeFacture && m.OrigineId.HasValue)
             .Select(m => m.OrigineId!.Value)
             .Distinct()
             .ToList();
@@ -246,11 +246,11 @@ public partial class StockMainViewModel : BaseViewModel
             .Distinct()
             .ToList();
 
-        var blParties = blIds.Count == 0
+        var factureParties = factureIds.Count == 0
             ? []
-            : await db.BonsLivraison.AsNoTracking()
-                .Where(b => blIds.Contains(b.Id))
-                .Select(b => new { b.Id, b.ClientId })
+            : await db.Factures.AsNoTracking()
+                .Where(f => factureIds.Contains(f.Id))
+                .Select(f => new { f.Id, f.ClientId })
                 .ToListAsync(cancellationToken);
 
         var brParties = brIds.Count == 0
@@ -274,7 +274,7 @@ public partial class StockMainViewModel : BaseViewModel
                 .Select(a => new { a.Id, a.FournisseurId })
                 .ToListAsync(cancellationToken);
 
-        var tierIds = blParties.Select(x => x.ClientId)
+        var tierIds = factureParties.Select(x => x.ClientId)
             .Concat(brParties.Select(x => x.FournisseurId))
             .Concat(avoirParties.Select(x => x.ClientId))
             .Concat(avoirFournisseurParties.Select(x => x.FournisseurId))
@@ -287,18 +287,18 @@ public partial class StockMainViewModel : BaseViewModel
                 .Where(t => tierIds.Contains(t.Id))
                 .ToDictionaryAsync(t => t.Id, t => t.Nom, cancellationToken);
 
-        var blMap = blParties.ToDictionary(x => x.Id, x => tierNames.GetValueOrDefault(x.ClientId, string.Empty));
+        var factureMap = factureParties.ToDictionary(x => x.Id, x => tierNames.GetValueOrDefault(x.ClientId, string.Empty));
         var brMap = brParties.ToDictionary(x => x.Id, x => tierNames.GetValueOrDefault(x.FournisseurId, string.Empty));
         var avoirMap = avoirParties.ToDictionary(x => x.Id, x => tierNames.GetValueOrDefault(x.ClientId, string.Empty));
         var avoirFournisseurMap = avoirFournisseurParties.ToDictionary(x => x.Id, x => tierNames.GetValueOrDefault(x.FournisseurId, string.Empty));
 
-        var blPriceMap = blIds.Count == 0
+        var facturePriceMap = factureIds.Count == 0
             ? new Dictionary<(int, int), decimal>()
-            : (await db.BonLivraisonLignes.AsNoTracking()
-                .Where(l => blIds.Contains(l.BLId) && l.ProduitId != null)
-                .Select(l => new { l.BLId, ProduitId = l.ProduitId!.Value, l.PrixUnitaireHT })
+            : (await db.FactureLignes.AsNoTracking()
+                .Where(l => factureIds.Contains(l.FactureId) && l.ProduitId != null)
+                .Select(l => new { l.FactureId, ProduitId = l.ProduitId!.Value, l.PrixUnitaireHT })
                 .ToListAsync(cancellationToken))
-                .GroupBy(l => (l.BLId, l.ProduitId))
+                .GroupBy(l => (l.FactureId, l.ProduitId))
                 .ToDictionary(g => g.Key, g => g.Last().PrixUnitaireHT);
 
         var brPriceMap = brIds.Count == 0
@@ -332,7 +332,7 @@ public partial class StockMainViewModel : BaseViewModel
         {
             m.PartyName = m.OrigineType switch
             {
-                StockMovementService.OrigineTypeBonLivraison when m.OrigineId is int blId => blMap.GetValueOrDefault(blId, string.Empty),
+                StockMovementService.OrigineTypeFacture when m.OrigineId is int factureId => factureMap.GetValueOrDefault(factureId, string.Empty),
                 StockMovementService.OrigineTypeBonReception when m.OrigineId is int brId => brMap.GetValueOrDefault(brId, string.Empty),
                 StockMovementService.OrigineTypeAvoir when m.OrigineId is int avoirId => avoirMap.GetValueOrDefault(avoirId, string.Empty),
                 StockMovementService.OrigineTypeAvoirFournisseur when m.OrigineId is int avfId => avoirFournisseurMap.GetValueOrDefault(avfId, string.Empty),
@@ -346,7 +346,7 @@ public partial class StockMainViewModel : BaseViewModel
             {
                 price = m.OrigineType switch
                 {
-                    StockMovementService.OrigineTypeBonLivraison when blPriceMap.TryGetValue((docId, m.ProduitId), out var blP) => blP,
+                    StockMovementService.OrigineTypeFacture when facturePriceMap.TryGetValue((docId, m.ProduitId), out var factP) => factP,
                     StockMovementService.OrigineTypeBonReception when brPriceMap.TryGetValue((docId, m.ProduitId), out var brP) => brP,
                     StockMovementService.OrigineTypeAvoir when avoirPriceMap.TryGetValue((docId, m.ProduitId), out var avP) => avP,
                     StockMovementService.OrigineTypeAvoirFournisseur when avoirFournisseurPriceMap.TryGetValue((docId, m.ProduitId), out var avfP) => avfP,

@@ -15,20 +15,11 @@ public sealed class DocumentNumberService : IDocumentNumberService
         _settings = settings;
     }
 
-    public Task<string> NextDevisAsync(CancellationToken cancellationToken = default) =>
-        NextFromDbAsync(db => db.Devis.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken), "DEV", cancellationToken);
-
-    public Task<string> NextBLAsync(CancellationToken cancellationToken = default) =>
-        NextFromDbAsync(db => db.BonsLivraison.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken), "BL", cancellationToken);
-
     public Task<string> NextBRAsync(CancellationToken cancellationToken = default) =>
         NextFromDbAsync(db => db.BonsReception.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken), "BR", cancellationToken);
 
     public Task<string> NextBCAsync(CancellationToken cancellationToken = default) =>
         NextFromDbAsync(db => db.BonsCommande.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken), "BC", cancellationToken);
-
-    public Task<string> NextBCClientAsync(CancellationToken cancellationToken = default) =>
-        NextFromDbAsync(db => db.BonsCommandeClient.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken), "BCC", cancellationToken);
 
     public Task<string> NextFactureAsync(CancellationToken cancellationToken = default) =>
         NextFromDbAsync(db => db.Factures.AsNoTracking().Select(d => d.Numero).ToListAsync(cancellationToken), "FAC", cancellationToken);

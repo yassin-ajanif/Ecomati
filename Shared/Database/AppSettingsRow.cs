@@ -12,7 +12,6 @@ public class AppSettingsRow
     public string? SocieteLogoPath { get; set; }
     public string TauxTVAJson { get; set; } = "[20]"; // JSON array of decimals
     public bool BlocageSiStockInsuffisant { get; set; } = true;
-    public int DevisValiditeJoursDefaut { get; set; } = 30;
     public string Devise { get; set; } = "MAD";
 
     /// <summary>Interface language: <c>fr</c> (default) or <c>ar</c> (RTL).</summary>

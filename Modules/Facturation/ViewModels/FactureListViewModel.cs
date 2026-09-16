@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using GestionCommerciale.Modules.Stock.Services;
 using GestionCommerciale.Shared.Helpers;
 using GestionCommerciale.Shared.Database;
 using GestionCommerciale.Shared.Models.Pdf;
@@ -20,6 +21,7 @@ public partial class FactureListViewModel : BaseViewModel
     private readonly IPdfService _pdf;
     private readonly ILocaleService _locale;
     private readonly IAppSettingsService _settings;
+    private readonly IStockMovementService _stock;
 
     public FactureListViewModel(
         IDbContextFactory<AppDbContext> dbFactory,
@@ -28,7 +30,8 @@ public partial class FactureListViewModel : BaseViewModel
         IDialogService dialog,
         IPdfService pdf,
         ILocaleService locale,
-        IAppSettingsService settings)
+        IAppSettingsService settings,
+        IStockMovementService stock)
     {
         _dbFactory = dbFactory;
         _workspace = workspaceNavigator;
@@ -37,6 +40,7 @@ public partial class FactureListViewModel : BaseViewModel
         _pdf = pdf;
         _locale = locale;
         _settings = settings;
+        _stock = stock;
         _locale.CultureApplied += (_, _) => RefreshListToolbar();
         RefreshListToolbar();
         Title = _locale.T("FactList_Title");
@@ -211,6 +215,7 @@ public partial class FactureListViewModel : BaseViewModel
             }
 
             var entity = await db.Factures.Include(f => f.Lignes).Include(f => f.Paiements).FirstAsync(f => f.Id == item.Id, cancellationToken);
+            await _stock.SyncFactureStockAsync(db, entity.Id, entity.Numero, [], null, cancellationToken);
             db.Factures.Remove(entity);
             await db.SaveChangesAsync(cancellationToken);
 

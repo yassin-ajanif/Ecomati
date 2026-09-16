@@ -7,7 +7,7 @@ namespace GestionCommerciale.Modules.Stock.Services;
 
 public sealed class StockMovementService : IStockMovementService
 {
-    public const string OrigineTypeBonLivraison = "BL";
+    public const string OrigineTypeFacture = "Facture";
     public const string OrigineTypeBonReception = "BR";
     public const string OrigineTypeAvoir = "Avoir";
     public const string OrigineTypeAvoirFournisseur = "AvoirFournisseur";
@@ -56,23 +56,23 @@ public sealed class StockMovementService : IStockMovementService
         });
     }
 
-    public Task ResyncBonLivraisonStockAsync(
+    public Task SyncFactureStockAsync(
         AppDbContext db,
-        int bonLivraisonId,
+        int factureId,
         string noteDetail,
-        IEnumerable<(int ProduitId, decimal QuantiteLivree)> lines,
+        IEnumerable<(int ProduitId, decimal Quantite)> lines,
         int? createdByUserId,
         CancellationToken cancellationToken = default)
     {
         var desired = lines
-            .Where(l => l.ProduitId > 0 && l.QuantiteLivree > 0)
+            .Where(l => l.ProduitId > 0 && l.Quantite > 0)
             .GroupBy(l => l.ProduitId)
-            .ToDictionary(g => g.Key, g => -g.Sum(l => l.QuantiteLivree));
+            .ToDictionary(g => g.Key, g => -g.Sum(l => l.Quantite));
 
         return SyncDocumentStockAsync(
             db,
-            OrigineTypeBonLivraison,
-            bonLivraisonId,
+            OrigineTypeFacture,
+            factureId,
             noteDetail,
             desired,
             createdByUserId,

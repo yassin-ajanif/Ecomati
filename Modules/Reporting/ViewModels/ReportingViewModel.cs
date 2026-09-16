@@ -153,7 +153,7 @@ public partial class ReportingViewModel : BaseViewModel
         var startPrev = startCur.AddMonths(-1);
         var endCur = startCur.AddMonths(1);
         var endPrev = startCur;
-        var blSince = startCur.AddMonths(-11);
+        var since = startCur.AddMonths(-11);
 
         var caCur = await InvoiceTtcSumAsync(db, startCur, endCur, ct);
         var caPrev = await InvoiceTtcSumAsync(db, startPrev, endPrev, ct);
@@ -185,15 +185,13 @@ public partial class ReportingViewModel : BaseViewModel
                 share));
         }
 
-        var blLignes = await (
-            from l in db.BonLivraisonLignes.AsNoTracking()
-            join b in db.BonsLivraison.AsNoTracking() on l.BLId equals b.Id
-            where b.Date >= blSince
-            select new { l.ProduitId, l.QuantiteLivree }
-        ).ToListAsync(ct);
-        var topProd = blLignes
+        var factureLignes = await db.FactureLignes.AsNoTracking()
+            .Where(l => l.Facture != null && l.Facture.Date >= since && l.ProduitId != null)
+            .Select(l => new { l.ProduitId, l.Quantite })
+            .ToListAsync(ct);
+        var topProd = factureLignes
             .GroupBy(l => l.ProduitId)
-            .Select(g => new { ProduitId = g.Key, Qty = g.Sum(x => x.QuantiteLivree) })
+            .Select(g => new { ProduitId = g.Key, Qty = g.Sum(x => x.Quantite) })
             .OrderByDescending(x => x.Qty)
             .Take(5)
             .ToList();

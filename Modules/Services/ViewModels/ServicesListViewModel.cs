@@ -156,9 +156,8 @@ public partial class ServicesListViewModel : BaseViewModel
         try
         {
             await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
-            var usedOnBl = await db.BonLivraisonLignes.AnyAsync(l => l.ServiceId == Selected.Service.Id, cancellationToken);
             var usedOnFacture = await db.FactureLignes.AnyAsync(l => l.ServiceId == Selected.Service.Id, cancellationToken);
-            if (usedOnBl || usedOnFacture)
+            if (usedOnFacture)
             {
                 await _dialog.ShowErrorAsync(_locale.T("Service_Title"), _locale.T("Service_ErrInUse"), cancellationToken);
                 return;

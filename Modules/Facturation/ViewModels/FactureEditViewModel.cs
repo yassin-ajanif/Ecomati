@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using GestionCommerciale.Modules.Auth.Services;
 using GestionCommerciale.Modules.Facturation.Models;
 using GestionCommerciale.Modules.Facturation.Services;
+using GestionCommerciale.Modules.Stock.Services;
 using GestionCommerciale.Modules.Tiers.Models;
 using GestionCommerciale.Shared.Database;
 using GestionCommerciale.Shared.Helpers;
@@ -24,6 +25,7 @@ public partial class FactureEditViewModel : BaseViewModel
     private readonly IDocumentNumberService _numbers;
     private readonly IAppSettingsService _settings;
     private readonly IFactureWorkflowService _factureWorkflow;
+    private readonly IStockMovementService _stock;
     private readonly IDialogService _dialog;
     private readonly WorkspaceNavigator _workspace;
     private readonly IServiceProvider _sp;
@@ -39,6 +41,7 @@ public partial class FactureEditViewModel : BaseViewModel
         IDocumentNumberService numbers,
         IAppSettingsService settings,
         IFactureWorkflowService factureWorkflow,
+        IStockMovementService stock,
         IDialogService dialog,
         WorkspaceNavigator workspaceNavigator,
         IServiceProvider sp,
@@ -53,6 +56,7 @@ public partial class FactureEditViewModel : BaseViewModel
         _numbers = numbers;
         _settings = settings;
         _factureWorkflow = factureWorkflow;
+        _stock = stock;
         _dialog = dialog;
         _workspace = workspaceNavigator;
         _sp = sp;
@@ -78,7 +82,6 @@ public partial class FactureEditViewModel : BaseViewModel
     public ObservableCollection<FacturePaiementRowViewModel> Paiements { get; } = [];
 
     [ObservableProperty] private int? _factureId;
-    [ObservableProperty] private int? _devisId;
     [ObservableProperty] private int _clientId;
     [ObservableProperty] private GestionCommerciale.Modules.Tiers.Models.Tiers? _selectedClient;
     [ObservableProperty] private string _numero = string.Empty;
@@ -87,7 +90,6 @@ public partial class FactureEditViewModel : BaseViewModel
     [ObservableProperty] private bool _estPayee;
     [ObservableProperty] private decimal _remiseGlobale;
     [ObservableProperty] private string _note = string.Empty;
-    [ObservableProperty] private string _bonCommandeReference = string.Empty;
     [ObservableProperty] private decimal _totalHt;
     [ObservableProperty] private decimal _totalTva;
     [ObservableProperty] private decimal _totalTtc;
@@ -254,6 +256,7 @@ public partial class FactureEditViewModel : BaseViewModel
             }
 
             var entity = await db.Factures.Include(f => f.Lignes).Include(f => f.Paiements).FirstAsync(f => f.Id == id, cancellationToken);
+            await _stock.SyncFactureStockAsync(db, entity.Id, entity.Numero, [], null, cancellationToken);
             db.Factures.Remove(entity);
             await db.SaveChangesAsync(cancellationToken);
 
@@ -496,8 +499,6 @@ public partial class FactureEditViewModel : BaseViewModel
         FactureId = id;
         var cfg = await _settings.GetAsync(cancellationToken);
         Devise = CurrencyHelper.FromSettings(cfg);
-        DevisId = null;
-        BonCommandeReference = string.Empty;
         Lignes.Clear();
         ResetAddProductSearch();
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
@@ -520,8 +521,6 @@ public partial class FactureEditViewModel : BaseViewModel
         }
 
         var f = await db.Factures.Include(x => x.Lignes).Include(x => x.Paiements).FirstAsync(x => x.Id == id, cancellationToken);
-        BonCommandeReference = f.BonCommandeReference;
-        DevisId = f.DevisId;
         Numero = f.Numero;
         ClientId = f.ClientId;
         Date = new DateTimeOffset(f.Date);
@@ -537,7 +536,6 @@ public partial class FactureEditViewModel : BaseViewModel
         {
             var row = new FactureLineRow
             {
-                BonLivraisonId = l.BonLivraisonId,
                 ProduitId = l.ProduitId,
                 ServiceId = l.ServiceId,
                 Reference = catalogRefs.GetReference(l.ProduitId, l.ServiceId),
@@ -628,13 +626,11 @@ public partial class FactureEditViewModel : BaseViewModel
                 {
                     Numero = num,
                     ClientId = ClientId,
-                    DevisId = DevisId,
                     Date = Date.DateTime,
                     DateEcheance = DateEcheance.DateTime,
                     EstPayee = EstPayee,
                     RemiseGlobale = RemiseGlobale,
                     Note = Note,
-                    BonCommandeReference = BonCommandeReference.Trim(),
                     CreatedByUserId = _session.UserId
                 };
                 foreach (var l in Lignes)
@@ -648,8 +644,7 @@ public partial class FactureEditViewModel : BaseViewModel
                         Quantite = l.Quantite,
                         PrixUnitaireHT = l.PrixUnitaireHt,
                         Remise = l.Remise,
-                        TauxTVA = l.TauxTva,
-                        BonLivraisonId = l.BonLivraisonId
+                        TauxTVA = l.TauxTva
                     });
                 }
 
@@ -663,13 +658,11 @@ public partial class FactureEditViewModel : BaseViewModel
                 entity = await db.Factures.Include(f => f.Lignes).FirstAsync(f => f.Id == FactureId, cancellationToken);
 
                 entity.ClientId = ClientId;
-                entity.DevisId = DevisId;
                 entity.Date = Date.DateTime;
                 entity.DateEcheance = DateEcheance.DateTime;
                 entity.EstPayee = EstPayee;
                 entity.RemiseGlobale = RemiseGlobale;
                 entity.Note = Note;
-                entity.BonCommandeReference = BonCommandeReference.Trim();
                 db.FactureLignes.RemoveRange(entity.Lignes);
                 foreach (var l in Lignes)
                 {
@@ -682,14 +675,24 @@ public partial class FactureEditViewModel : BaseViewModel
                         Quantite = l.Quantite,
                         PrixUnitaireHT = l.PrixUnitaireHt,
                         Remise = l.Remise,
-                        TauxTVA = l.TauxTva,
-                        BonLivraisonId = l.BonLivraisonId
+                        TauxTVA = l.TauxTva
                     });
                 }
 
                 DocumentTotalsHelper.SyncFactureTotalTtc(entity);
                 await db.SaveChangesAsync(cancellationToken);
             }
+
+            await _stock.SyncFactureStockAsync(
+                db,
+                entity.Id,
+                entity.Numero,
+                Lignes
+                    .Where(l => l.ProduitId is int && !l.IsService)
+                    .Select(l => (ProduitId: l.ProduitId!.Value, Quantite: l.Quantite)),
+                _session.UserId,
+                cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
 
             Numero = entity.Numero;
             await _dialog.ShowInfoAsync(_locale.T("Fact_Title"), _locale.T("Fact_Saved"), cancellationToken);
@@ -808,7 +811,6 @@ public partial class FactureEditViewModel : BaseViewModel
         if (FactureId is not { } id) return null;
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var f = await db.Factures.Include(x => x.Lignes).Include(x => x.Paiements).FirstAsync(x => x.Id == id, cancellationToken);
-        f.BonCommandeReference = BonCommandeReference.Trim();
         var client = await db.Tiers.AsNoTracking().FirstAsync(t => t.Id == f.ClientId, cancellationToken);
         return await _pdf.BuildFacturePdfAsync(f, DocumentPartyPdfInfo.FromTiers(client), cancellationToken);
     }
