@@ -28,11 +28,21 @@
           </Grid>
         </StackPanel>
         <StackPanel Grid.Column="4" Spacing="4">
-          <TextBlock Text="{Binding LblCoefficient}" FontWeight="SemiBold" FontSize="12"/>
-          <NumericUpDown Value="{Binding Coefficient}" FormatString="N2" Minimum="0" Increment="0.01"
+          <TextBlock Text="{Binding LblMarketPrice}" FontWeight="SemiBold" FontSize="12"/>
+          <NumericUpDown Value="{Binding MarketPrice}" FormatString="N2" Minimum="0" Increment="0.01"
                          HorizontalAlignment="Stretch"/>
         </StackPanel>
       </Grid>
+
+      <Border HorizontalAlignment="Left" Padding="12,8" CornerRadius="20"
+              Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <TextBlock Text="{Binding LblCoefficient}" FontWeight="SemiBold" FontSize="12"
+                     VerticalAlignment="Center" Opacity="0.75"/>
+          <TextBlock Text="{Binding CoefficientLabel}" FontWeight="Bold" FontSize="18"
+                     VerticalAlignment="Center" Foreground="#3730A3"/>
+        </StackPanel>
+      </Border>
 
       <StackPanel Orientation="Horizontal" Spacing="8">
         <TextBlock Text="{Binding LblExpenses}" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -86,11 +96,20 @@
             <TextBlock Text="{Binding LblSumExpenses}" Opacity="0.7"/>
             <TextBlock Grid.Column="1" Text="{Binding SumExpensesLabel}" FontWeight="SemiBold" HorizontalAlignment="Right"/>
           </Grid>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding LblCoefficient}" Opacity="0.7"/>
+            <TextBlock Grid.Column="1" Text="{Binding CoefficientLabel}" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+          </Grid>
           <Border Height="1" Background="#C7D2FE" Opacity="0.6"/>
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Text="{Binding LblProductPrice}" FontWeight="Bold" FontSize="14"/>
             <TextBlock Grid.Column="1" Text="{Binding ProductPriceLabel}" FontWeight="Bold" FontSize="18"
                        Foreground="#3730A3" HorizontalAlignment="Right"/>
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasMargin}">
+            <TextBlock Text="{Binding LblMargin}" FontWeight="Bold" FontSize="14"/>
+            <TextBlock Grid.Column="1" Text="{Binding MarginLabel}" FontWeight="Bold" FontSize="18"
+                       Foreground="#15803D" HorizontalAlignment="Right"/>
           </Grid>
         </StackPanel>
       </Border>

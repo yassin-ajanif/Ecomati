@@ -428,14 +428,15 @@ internal static class UiTranslationExtras
         ["ModePaiement_TPE"] = ("TPE", "محطة دفع"),
 
         ["Calc_Help"] = (
-            "Total frais = prix gros + frais. Prix produit = (total frais ÷ prix gros) × (prix unitaire RMB × coefficient).",
-            "إجمالي المصاريف = سعر الجملة + المصاريف. سعر المنتج = (إجمالي المصاريف ÷ سعر الجملة) × (سعر الوحدة RMB × المعامل)."),
+            "Total frais = prix gros + frais. Coefficient = total frais ÷ prix gros. Prix produit = coefficient × prix unitaire RMB.",
+            "إجمالي المصاريف = سعر الجملة + المصاريف. المعامل = إجمالي المصاريف ÷ سعر الجملة. سعر المنتج = المعامل × سعر الوحدة RMB."),
         ["Calc_Formula"] = (
-            "Prix produit = (total frais ÷ prix gros) × (RMB × coefficient)",
-            "سعر المنتج = (إجمالي المصاريف ÷ سعر الجملة) × (RMB × المعامل)"),
+            "Prix produit = (total frais ÷ prix gros) × RMB",
+            "سعر المنتج = (إجمالي المصاريف ÷ سعر الجملة) × RMB"),
         ["Calc_Gros"] = ("Prix gros (total de l'achat)", "سعر الجملة (إجمالي الشراء)"),
         ["Calc_Rmb"] = ("Prix unitaire RMB", "سعر الوحدة RMB"),
-        ["Calc_Coefficient"] = ("Coefficient RMB → MAD", "معامل RMB → MAD"),
+        ["Calc_Coefficient"] = ("Coefficient RMB", "معامل RMB"),
+        ["Calc_MarketPrice"] = ("Prix marché", "سعر السوق"),
         ["Calc_Expenses"] = ("Frais", "المصاريف"),
         ["Calc_AddExpense"] = ("Ajouter un frais", "إضافة مصروف"),
         ["Calc_ExpenseLabel"] = ("Libellé", "البيان"),
@@ -443,6 +444,7 @@ internal static class UiTranslationExtras
         ["Calc_SumExpenses"] = ("Total frais", "إجمالي المصاريف"),
         ["Calc_AddedCost"] = ("Coût ajouté", "التكلفة المضافة"),
         ["Calc_ProductPrice"] = ("Prix produit", "سعر المنتج"),
+        ["Calc_Margin"] = ("Marge", "الهامش"),
     };
 
     internal static bool TryGet(string key, out (string Fr, string Ar) pair) => Map.TryGetValue(key, out pair);

@@ -29,12 +29,15 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
 
     [ObservableProperty] private decimal _grosPrice;
     [ObservableProperty] private decimal _unitPriceRmb;
-    [ObservableProperty] private decimal _coefficient = 1.4m;
+    [ObservableProperty] private decimal? _marketPrice;
     [ObservableProperty] private string _devise = "MAD";
     public string RmbCurrency => "RMB";
 
     [ObservableProperty] private decimal _sumExpenses;
+    [ObservableProperty] private decimal _coefficient;
     [ObservableProperty] private decimal _productPrice;
+    [ObservableProperty] private decimal _margin;
+    [ObservableProperty] private bool _hasMargin;
 
     [ObservableProperty] private string _lblHelp = string.Empty;
     [ObservableProperty] private string _lblFormula = string.Empty;
@@ -47,13 +50,17 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
     [ObservableProperty] private string _lblExpenseAmount = string.Empty;
     [ObservableProperty] private string _btnRemove = string.Empty;
     [ObservableProperty] private string _lblSumExpenses = string.Empty;
+    [ObservableProperty] private string _lblMarketPrice = string.Empty;
     [ObservableProperty] private string _lblProductPrice = string.Empty;
+    [ObservableProperty] private string _lblMargin = string.Empty;
     [ObservableProperty] private string _sumExpensesLabel = string.Empty;
+    [ObservableProperty] private string _coefficientLabel = string.Empty;
     [ObservableProperty] private string _productPriceLabel = string.Empty;
+    [ObservableProperty] private string _marginLabel = string.Empty;
 
     partial void OnGrosPriceChanged(decimal value) => Recalc();
     partial void OnUnitPriceRmbChanged(decimal value) => Recalc();
-    partial void OnCoefficientChanged(decimal value) => Recalc();
+    partial void OnMarketPriceChanged(decimal? value) => Recalc();
     partial void OnDeviseChanged(string value) => UpdateResultLabels();
 
     private async Task LoadDeviseAsync()
@@ -77,7 +84,9 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
         LblExpenseAmount = _locale.T("Calc_ExpenseAmount");
         BtnRemove = _locale.T("Btn_RemoveLine");
         LblSumExpenses = _locale.T("Calc_SumExpenses");
+        LblMarketPrice = _locale.T("Calc_MarketPrice");
         LblProductPrice = _locale.T("Calc_ProductPrice");
+        LblMargin = _locale.T("Calc_Margin");
         UpdateResultLabels();
     }
 
@@ -113,13 +122,18 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
     private void Recalc()
     {
         SumExpenses = GrosPrice + Expenses.Sum(x => x.Montant);
-        ProductPrice = GrosPrice > 0 ? SumExpenses / GrosPrice * UnitPriceRmb * Coefficient : 0;
+        Coefficient = GrosPrice > 0 ? SumExpenses / GrosPrice : 0;
+        ProductPrice = Coefficient * UnitPriceRmb;
+        HasMargin = MarketPrice.HasValue;
+        Margin = MarketPrice is decimal mp ? mp - ProductPrice : 0;
         UpdateResultLabels();
     }
 
     private void UpdateResultLabels()
     {
         SumExpensesLabel = CurrencyHelper.Format(SumExpenses, Devise);
+        CoefficientLabel = Coefficient.ToString("N2");
         ProductPriceLabel = CurrencyHelper.Format(ProductPrice, Devise);
+        MarginLabel = CurrencyHelper.Format(Margin, Devise);
     }
 }
