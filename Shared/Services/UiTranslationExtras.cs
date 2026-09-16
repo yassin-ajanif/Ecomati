@@ -425,6 +425,23 @@ internal static class UiTranslationExtras
         ["Stock_AnnulationNote"] = ("Annulation {0}", "إلغاء {0}"),
         ["Stock_ModificationNote"] = ("Modif {0}", "تعديل {0}"),
         ["ModePaiement_TPE"] = ("TPE", "محطة دفع"),
+
+        ["Calc_Help"] = (
+            "Total frais = prix gros + frais. Prix produit = (total frais ÷ prix gros) × (prix unitaire RMB × coefficient).",
+            "إجمالي المصاريف = سعر الجملة + المصاريف. سعر المنتج = (إجمالي المصاريف ÷ سعر الجملة) × (سعر الوحدة RMB × المعامل)."),
+        ["Calc_Formula"] = (
+            "Prix produit = (total frais ÷ prix gros) × (RMB × coefficient)",
+            "سعر المنتج = (إجمالي المصاريف ÷ سعر الجملة) × (RMB × المعامل)"),
+        ["Calc_Gros"] = ("Prix gros (total de l'achat)", "سعر الجملة (إجمالي الشراء)"),
+        ["Calc_Rmb"] = ("Prix unitaire RMB", "سعر الوحدة RMB"),
+        ["Calc_Coefficient"] = ("Coefficient RMB → MAD", "معامل RMB → MAD"),
+        ["Calc_Expenses"] = ("Frais", "المصاريف"),
+        ["Calc_AddExpense"] = ("Ajouter un frais", "إضافة مصروف"),
+        ["Calc_ExpenseLabel"] = ("Libellé", "البيان"),
+        ["Calc_ExpenseAmount"] = ("Montant", "المبلغ"),
+        ["Calc_SumExpenses"] = ("Total frais", "إجمالي المصاريف"),
+        ["Calc_AddedCost"] = ("Coût ajouté", "التكلفة المضافة"),
+        ["Calc_ProductPrice"] = ("Prix produit", "سعر المنتج"),
     };
 
     internal static bool TryGet(string key, out (string Fr, string Ar) pair) => Map.TryGetValue(key, out pair);

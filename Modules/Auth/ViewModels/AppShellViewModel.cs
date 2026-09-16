@@ -59,6 +59,7 @@ public partial class AppShellViewModel : BaseViewModel
     [ObservableProperty] private string _navFactures = string.Empty;
     [ObservableProperty] private string _navAvoirs = string.Empty;
     [ObservableProperty] private string _navCharges = string.Empty;
+    [ObservableProperty] private string _navImportCalc = string.Empty;
     [ObservableProperty] private string _navServices = string.Empty;
     [ObservableProperty] private string _navStockAdmin = string.Empty;
     [ObservableProperty] private string _navStock = string.Empty;
@@ -75,6 +76,7 @@ public partial class AppShellViewModel : BaseViewModel
     [ObservableProperty] private bool _isNavFacturesActive;
     [ObservableProperty] private bool _isNavAvoirsActive;
     [ObservableProperty] private bool _isNavChargesActive;
+    [ObservableProperty] private bool _isNavImportCalcActive;
     [ObservableProperty] private bool _isNavServicesActive;
     [ObservableProperty] private bool _isNavStockActive;
     [ObservableProperty] private bool _isNavProduitsActive;
@@ -91,6 +93,7 @@ public partial class AppShellViewModel : BaseViewModel
         NavFactures = _locale.T("Nav_Factures");
         NavAvoirs = _locale.T("Nav_Avoirs");
         NavCharges = _locale.T("Nav_Charges");
+        NavImportCalc = _locale.T("Nav_ImportCalc");
         NavServices = _locale.T("Nav_Services");
         NavStockAdmin = _locale.T("Nav_StockAdmin");
         NavStock = _locale.T("Nav_Stock");
@@ -206,6 +209,9 @@ public partial class AppShellViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private void GoImportCalc() => _workspace.Open(_sp.GetRequiredService<ImportCostCalculatorViewModel>());
+
+    [RelayCommand]
     private void GoServices()
     {
         var vm = _sp.GetRequiredService<ServicesListViewModel>();
@@ -244,6 +250,7 @@ public partial class AppShellViewModel : BaseViewModel
         IsNavFacturesActive = p is FactureListViewModel or FactureEditViewModel;
         IsNavAvoirsActive = p is AvoirListViewModel or AvoirEditViewModel;
         IsNavChargesActive = p is ChargesListViewModel or ChargeEditViewModel;
+        IsNavImportCalcActive = p is ImportCostCalculatorViewModel;
         IsNavServicesActive = p is ServicesListViewModel or ServiceEditViewModel;
         IsNavStockActive = p is StockMainViewModel;
         IsNavProduitsActive = p is ProduitsViewModel;

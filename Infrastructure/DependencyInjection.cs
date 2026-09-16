@@ -87,6 +87,7 @@ public static class DependencyInjection
         services.AddTransient<AvoirFournisseurEditViewModel>();
         services.AddTransient<ChargesListViewModel>();
         services.AddTransient<ChargeEditViewModel>();
+        services.AddTransient<ImportCostCalculatorViewModel>();
         services.AddTransient<ServicesListViewModel>();
         services.AddTransient<ServiceEditViewModel>();
         services.AddSingleton<ReportingViewModel>();

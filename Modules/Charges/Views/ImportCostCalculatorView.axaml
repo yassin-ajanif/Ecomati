@@ -1,0 +1,99 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GestionCommerciale.Modules.Charges.ViewModels"
+             x:Class="GestionCommerciale.Modules.Charges.Views.ImportCostCalculatorView"
+             x:Name="ThisView"
+             x:DataType="vm:ImportCostCalculatorViewModel">
+  <ScrollViewer>
+    <StackPanel Spacing="12" MaxWidth="780" HorizontalAlignment="Left">
+      <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold"/>
+      <TextBlock Text="{Binding LblHelp}" Classes="subtle" TextWrapping="Wrap" Opacity="0.8"/>
+      <TextBlock Text="{Binding LblFormula}" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" Opacity="0.75"/>
+
+      <Grid ColumnDefinitions="*,16,*,16,*">
+        <StackPanel Spacing="4">
+          <TextBlock Text="{Binding LblGros}" FontWeight="SemiBold" FontSize="12"/>
+          <Grid ColumnDefinitions="*,Auto">
+            <NumericUpDown Value="{Binding GrosPrice}" FormatString="N2" Minimum="0" Increment="1"
+                           HorizontalAlignment="Stretch" Margin="0,0,8,0"/>
+            <TextBlock Grid.Column="1" Text="{Binding Devise}" VerticalAlignment="Center" Opacity="0.75" FontWeight="SemiBold"/>
+          </Grid>
+        </StackPanel>
+        <StackPanel Grid.Column="2" Spacing="4">
+          <TextBlock Text="{Binding LblRmb}" FontWeight="SemiBold" FontSize="12"/>
+          <Grid ColumnDefinitions="*,Auto">
+            <NumericUpDown Value="{Binding UnitPriceRmb}" FormatString="N2" Minimum="0" Increment="0.01"
+                           HorizontalAlignment="Stretch" Margin="0,0,8,0"/>
+            <TextBlock Grid.Column="1" Text="{Binding RmbCurrency}" VerticalAlignment="Center" Opacity="0.75" FontWeight="SemiBold"/>
+          </Grid>
+        </StackPanel>
+        <StackPanel Grid.Column="4" Spacing="4">
+          <TextBlock Text="{Binding LblCoefficient}" FontWeight="SemiBold" FontSize="12"/>
+          <NumericUpDown Value="{Binding Coefficient}" FormatString="N2" Minimum="0" Increment="0.01"
+                         HorizontalAlignment="Stretch"/>
+        </StackPanel>
+      </Grid>
+
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="{Binding LblExpenses}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+        <Button Content="{Binding BtnAddExpense}" Command="{Binding AddExpenseCommand}"/>
+      </StackPanel>
+
+      <Border BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="8"
+              Background="{DynamicResource CourseraSurfaceBrush}">
+        <Grid RowDefinitions="Auto,*">
+          <Border Grid.Row="0" Background="{DynamicResource CourseraSurfaceMutedBrush}" Padding="8,8"
+                  CornerRadius="8,8,0,0">
+            <Grid ColumnDefinitions="*,140,44,90">
+              <TextBlock Grid.Column="0" Text="{Binding LblExpenseLabel}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+              <TextBlock Grid.Column="1" Text="{Binding LblExpenseAmount}" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0"/>
+              <TextBlock Grid.Column="2" Text="{Binding Devise}" FontWeight="SemiBold" VerticalAlignment="Center" Opacity="0.75"/>
+            </Grid>
+          </Border>
+          <ItemsControl Grid.Row="1" ItemsSource="{Binding Expenses}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="vm:ImportCostExpenseRow">
+                <Border Padding="6,4" BorderBrush="#18000000" BorderThickness="0,0,0,1">
+                  <Grid MinHeight="34" ColumnDefinitions="*,140,44,90">
+                    <TextBox Grid.Column="0" Text="{Binding Libelle}" Padding="6,4" Margin="0,0,8,0"
+                             Watermark="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).LblExpenseLabel}"/>
+                    <NumericUpDown Grid.Column="1" ShowButtonSpinner="False" Value="{Binding Montant}"
+                                   FormatString="N2" Minimum="0" Increment="1"
+                                   HorizontalAlignment="Stretch" Margin="0,0,8,0"/>
+                    <TextBlock Grid.Column="2" Text="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).Devise}"
+                               VerticalAlignment="Center" Opacity="0.75"/>
+                    <Button Grid.Column="3" Content="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).BtnRemove}"
+                            Command="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).RemoveExpenseCommand}"
+                            CommandParameter="{Binding}"/>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </Grid>
+      </Border>
+
+      <Border Padding="14,12"
+              MinWidth="280"
+              HorizontalAlignment="Right"
+              Background="#EEF2FF"
+              BorderBrush="#C7D2FE"
+              BorderThickness="1"
+              CornerRadius="6"
+              BoxShadow="0 1 4 0 #18000000">
+        <StackPanel Spacing="8" MinWidth="260">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding LblSumExpenses}" Opacity="0.7"/>
+            <TextBlock Grid.Column="1" Text="{Binding SumExpensesLabel}" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+          </Grid>
+          <Border Height="1" Background="#C7D2FE" Opacity="0.6"/>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding LblProductPrice}" FontWeight="Bold" FontSize="14"/>
+            <TextBlock Grid.Column="1" Text="{Binding ProductPriceLabel}" FontWeight="Bold" FontSize="18"
+                       Foreground="#3730A3" HorizontalAlignment="Right"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
