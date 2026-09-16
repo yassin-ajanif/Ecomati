@@ -1,6 +1,5 @@
 using GestionCommerciale.Modules.Facturation.Models;
 using GestionCommerciale.Shared.Database;
-using GestionCommerciale.Shared.Helpers;
 using GestionCommerciale.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -47,14 +46,7 @@ public sealed class ClientAccountStatementService : IClientAccountStatementServi
                 a.Id,
                 a.Numero,
                 a.Date,
-                a.Motif,
-                Lignes = a.Lignes!.Select(l => new
-                {
-                    l.Quantite,
-                    l.PrixUnitaireHT,
-                    l.Remise,
-                    l.TauxTVA
-                }).ToList()
+                a.TotalTtc
             })
             .ToListAsync(cancellationToken);
 
@@ -77,23 +69,15 @@ public sealed class ClientAccountStatementService : IClientAccountStatementServi
 
         foreach (var a in avoirs)
         {
-            var lignes = a.Lignes.Select(l => new AvoirLigne
-            {
-                Quantite = l.Quantite,
-                PrixUnitaireHT = l.PrixUnitaireHT,
-                Remise = l.Remise,
-                TauxTVA = l.TauxTVA
-            }).ToList();
-            var (_, _, ttc) = DocumentTotalsHelper.AvoirTotals(lignes);
+            var ttc = a.TotalTtc;
             if (ttc <= 0) continue;
 
-            var observation = string.IsNullOrWhiteSpace(a.Motif) ? string.Empty : a.Motif.Trim();
             entries.Add((
                 a.Date.Date,
                 ClientAccountEntryKind.Avoir,
                 a.Id,
                 _locale.Tf("ClientLedger_AvoirFmt", a.Numero),
-                observation,
+                string.Empty,
                 0,
                 ttc));
         }

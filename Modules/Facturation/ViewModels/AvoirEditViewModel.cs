@@ -7,7 +7,8 @@ using CommunityToolkit.Mvvm.Input;
 using GestionCommerciale.Modules.Auth.Services;
 using GestionCommerciale.Modules.Facturation.Models;
 using GestionCommerciale.Modules.Stock.Models;
-using GestionCommerciale.Modules.Stock.Services;using GestionCommerciale.Modules.Facturation.Services;
+using GestionCommerciale.Modules.Stock.Services;
+using GestionCommerciale.Modules.Facturation.Services;
 using GestionCommerciale.Modules.Tiers.Models;
 using GestionCommerciale.Shared.Database;
 using GestionCommerciale.Shared.Helpers;
@@ -23,33 +24,25 @@ public partial class AvoirLineRow : ObservableObject
 {
     [ObservableProperty] private int? _produitId;
     [ObservableProperty] private int? _serviceId;
-    [ObservableProperty] private string _reference = string.Empty;
     [ObservableProperty] private string _designation = string.Empty;
     [ObservableProperty] private string _conditionnement = string.Empty;
     [ObservableProperty] private decimal _quantite = 1;
     [ObservableProperty] private decimal _prixUnitaireHt;
-    [ObservableProperty] private decimal _remise;
-    [ObservableProperty] private decimal _tauxTva;
 
     public bool IsService => ServiceId is > 0;
 
-    public decimal MontantHt => DocumentTotalsHelper.LigneHT(Quantite, PrixUnitaireHt, Remise);
-    public decimal MontantTtc => MontantHt * (1 + TauxTva / 100m);
+    public decimal Montant => Quantite * PrixUnitaireHt;
 
     partial void OnQuantiteChanged(decimal value) => NotifyMontants();
     partial void OnPrixUnitaireHtChanged(decimal value) => NotifyMontants();
-    partial void OnRemiseChanged(decimal value) => NotifyMontants();
-    partial void OnTauxTvaChanged(decimal value) => NotifyMontants();
 
     public void ApplyCatalogProduct(Produit p)
     {
         ProduitId = p.Id;
         ServiceId = null;
-        Reference = p.Reference;
         Designation = p.Designation;
         Conditionnement = p.Unite;
-        PrixUnitaireHt = p.PrixVenteHT;
-        TauxTva = p.TauxTVA;
+        PrixUnitaireHt = Math.Round(p.PrixVenteHT * (1 + p.TauxTVA / 100m), 2);
         NotifyMontants();
     }
 
@@ -66,19 +59,13 @@ public partial class AvoirLineRow : ObservableObject
             ServiceId = null;
         }
 
-        Reference = item.Reference;
         Designation = item.Designation;
         Conditionnement = item.Unite;
-        PrixUnitaireHt = item.PrixVenteHT;
-        TauxTva = item.TauxTVA;
+        PrixUnitaireHt = item.PrixVenteTtc;
         NotifyMontants();
     }
 
-    private void NotifyMontants()
-    {
-        OnPropertyChanged(nameof(MontantHt));
-        OnPropertyChanged(nameof(MontantTtc));
-    }
+    private void NotifyMontants() => OnPropertyChanged(nameof(Montant));
 }
 
 public partial class AvoirEditViewModel : BaseViewModel
@@ -91,7 +78,6 @@ public partial class AvoirEditViewModel : BaseViewModel
     private readonly IServiceProvider _sp;
     private readonly ICurrentUserSession _session;
     private readonly ILocaleService _locale;
-    private readonly IUiPreferencesService _uiPreferences;
     private readonly IPdfService _pdf;
     private readonly IPdfPrintService _pdfPrint;
     private readonly IStockMovementService _stock;
@@ -107,7 +93,6 @@ public partial class AvoirEditViewModel : BaseViewModel
         IServiceProvider sp,
         ICurrentUserSession session,
         ILocaleService locale,
-        IUiPreferencesService uiPreferences,
         IPdfService pdf,
         IPdfPrintService pdfPrint,
         IStockMovementService stock,
@@ -122,20 +107,19 @@ public partial class AvoirEditViewModel : BaseViewModel
         _sp = sp;
         _session = session;
         _locale = locale;
-        _uiPreferences = uiPreferences;
         _pdf = pdf;
         _pdfPrint = pdfPrint;
         _stock = stock;
         _settings = settings;
-        _addLineSearch = new AddLineCatalogSearchCoordinator(catalogSearch);        _locale.CultureApplied += (_, _) =>
+        _addLineSearch = new AddLineCatalogSearchCoordinator(catalogSearch);
+        _locale.CultureApplied += (_, _) =>
         {
             RefreshAvoirUi();
             UpdateTotalLines();
         };
-        LineGridColumns.PropertyChanged += OnLineGridColumnsPropertyChanged;
-        _uiPreferences.LoadDocumentLineColumns("avoir", LineGridColumns);
         Lignes.CollectionChanged += LignesOnCollectionChanged;
-        Title = _locale.T("Avoir_Title");        RefreshAvoirUi();
+        Title = _locale.T("Avoir_Title");
+        RefreshAvoirUi();
         _ = LoadClientsAsync(CancellationToken.None);
     }
 
@@ -150,10 +134,7 @@ public partial class AvoirEditViewModel : BaseViewModel
     [ObservableProperty] private GestionCommerciale.Modules.Tiers.Models.Tiers? _selectedClient;
     [ObservableProperty] private string _numero = string.Empty;
     [ObservableProperty] private DateTimeOffset _date = new(DateTime.Today);
-    [ObservableProperty] private string _motif = string.Empty;
     [ObservableProperty] private bool _retourMarchandise;
-    [ObservableProperty] private decimal _totalHt;
-    [ObservableProperty] private decimal _totalTva;
     [ObservableProperty] private decimal _totalTtc;
     [ObservableProperty] private bool _canEditDraft;
     [ObservableProperty] private AvoirLineRow? _selectedLine;
@@ -170,28 +151,17 @@ public partial class AvoirEditViewModel : BaseViewModel
     [ObservableProperty] private string _lblDateAvoir = string.Empty;
     [ObservableProperty] private string _btnRemoveLine = string.Empty;
     [ObservableProperty] private string _wmAddProduct = string.Empty;
-    [ObservableProperty] private string _lblTotals = string.Empty;    [ObservableProperty] private string _devise = string.Empty;
-    [ObservableProperty] private string _totalHtLabel = string.Empty;
-    [ObservableProperty] private string _totalTvaLabel = string.Empty;
+    [ObservableProperty] private string _lblTotals = string.Empty;
+    [ObservableProperty] private string _devise = string.Empty;
     [ObservableProperty] private string _totalTtcLabel = string.Empty;
-    [ObservableProperty] private string _wmMotif = string.Empty;
     [ObservableProperty] private string _chkRetourStock = string.Empty;
-    [ObservableProperty] private string _lblDocLineColumnsHint = string.Empty;
-    [ObservableProperty] private string _lblDocColRef = string.Empty;
+    [ObservableProperty] private string _lblAddProduct = string.Empty;
     [ObservableProperty] private string _lblDocColDesignation = string.Empty;
     [ObservableProperty] private string _lblDocColQte = string.Empty;
     [ObservableProperty] private string _lblDocColCond = string.Empty;
     [ObservableProperty] private string _wmDocLineUnite = string.Empty;
-    [ObservableProperty] private string _lblDocColPuHt = string.Empty;
-    [ObservableProperty] private string _lblDocColRemise = string.Empty;
-    [ObservableProperty] private string _lblDocColTva = string.Empty;
-    [ObservableProperty] private string _lblDocColMontantHt = string.Empty;
-    [ObservableProperty] private string _lblDocColMontantTtc = string.Empty;
-
-    public DocumentLineGridColumnState LineGridColumns { get; } = new();
-    public bool ShowTotalTva => LineGridColumns.ShowTva && LineGridColumns.ShowMontantTtc;
-    public bool ShowTotalTtc => LineGridColumns.ShowMontantTtc && LineGridColumns.ShowTva;
-    public bool HighlightHtTotal => !ShowTotalTtc;
+    [ObservableProperty] private string _lblDocColPrice = string.Empty;
+    [ObservableProperty] private string _lblDocColTotal = string.Empty;
 
     public AutoCompleteFilterPredicate<object?> PartyAutocompleteFilter => PartyAutoComplete.ItemFilter;
 
@@ -213,17 +183,6 @@ public partial class AvoirEditViewModel : BaseViewModel
         if (_suppressAddLinePick) return;
         _addLineSearch.QueueSearch(value);
     }
-    private void OnLineGridColumnsPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(DocumentLineGridColumnState.ShowTva) or nameof(DocumentLineGridColumnState.ShowMontantTtc))
-        {
-            OnPropertyChanged(nameof(ShowTotalTva));
-            OnPropertyChanged(nameof(ShowTotalTtc));
-            OnPropertyChanged(nameof(HighlightHtTotal));
-            RefreshTotals();
-        }
-        _uiPreferences.SaveDocumentLineColumns("avoir", LineGridColumns);
-    }
 
     private void RefreshAvoirUi()
     {
@@ -237,25 +196,19 @@ public partial class AvoirEditViewModel : BaseViewModel
         LblDateAvoir = _locale.T("Lbl_DateAvoir");
         BtnRemoveLine = _locale.T("Btn_RemoveLine");
         WmAddProduct = _locale.T("Wm_SearchCatalog");
-        LblTotals = _locale.T("Lbl_Totals");        WmMotif = _locale.T("Lbl_Motif");
+        LblAddProduct = _locale.T("Devis_LblAddProduct");
+        LblTotals = _locale.T("Lbl_Totals");
         ChkRetourStock = _locale.T("Lbl_ReturnStock");
-        LblDocLineColumnsHint = _locale.T("DocLine_ColumnsHint");
-        LblDocColRef = _locale.T("DocLine_ColRef");
         LblDocColDesignation = _locale.T("DocLine_ColDesignation");
         LblDocColQte = _locale.T("DocLine_ColQte");
         LblDocColCond = _locale.T("DocLine_ColCond");
         WmDocLineUnite = _locale.T("DocLine_WmUnite");
-        LblDocColPuHt = _locale.T("DocLine_ColPuHt");
-        LblDocColRemise = _locale.T("DocLine_ColRemise");
-        LblDocColTva = _locale.T("DocLine_ColTva");
-        LblDocColMontantHt = _locale.T("DocLine_ColMontantHt");
-        LblDocColMontantTtc = _locale.T("DocLine_ColMontantTtc");
+        LblDocColPrice = _locale.T("Fact_ColPrice");
+        LblDocColTotal = _locale.T("Fact_ColTotal");
     }
 
     private void UpdateTotalLines()
     {
-        TotalHtLabel = _locale.Tf("Doc_FmtHt", TotalHt, Devise).TrimEnd();
-        TotalTvaLabel = _locale.Tf("Doc_FmtTva", TotalTva, Devise).TrimEnd();
         TotalTtcLabel = _locale.Tf("Doc_FmtTtc", TotalTtc, Devise).TrimEnd();
     }
 
@@ -269,18 +222,12 @@ public partial class AvoirEditViewModel : BaseViewModel
 
     private void RefreshTotals()
     {
-        var includeTva = ShowTotalTtc;
         var lines = Lignes.Select(l => new AvoirLigne
         {
             Quantite = l.Quantite,
-            PrixUnitaireHT = l.PrixUnitaireHt,
-            Remise = l.Remise,
-            TauxTVA = includeTva ? l.TauxTva : 0
+            PrixUnitaireHT = l.PrixUnitaireHt
         });
-        var (ht, tva, ttc) = DocumentTotalsHelper.AvoirTotals(lines);
-        TotalHt = ht;
-        TotalTva = tva;
-        TotalTtc = ttc;
+        TotalTtc = DocumentTotalsHelper.AvoirTtc(lines);
         UpdateTotalLines();
     }
 
@@ -366,9 +313,8 @@ public partial class AvoirEditViewModel : BaseViewModel
         if (e.PropertyName is nameof(AvoirLineRow.ProduitId) or nameof(AvoirLineRow.ServiceId)
             && sender is AvoirLineRow row && (row.ProduitId is > 0 || row.ServiceId is > 0))
             ConsolidateDuplicateCatalogLines();
-        if (e.PropertyName is nameof(AvoirLineRow.MontantHt) or nameof(AvoirLineRow.MontantTtc)
-            or nameof(AvoirLineRow.Quantite) or nameof(AvoirLineRow.PrixUnitaireHt)
-            or nameof(AvoirLineRow.Remise) or nameof(AvoirLineRow.TauxTva))
+        if (e.PropertyName is nameof(AvoirLineRow.Montant)
+            or nameof(AvoirLineRow.Quantite) or nameof(AvoirLineRow.PrixUnitaireHt))
             RefreshTotals();
     }
     [RelayCommand]
@@ -431,7 +377,6 @@ public partial class AvoirEditViewModel : BaseViewModel
         ResetAddProductSearch();
         Numero = _locale.T("Avoir_DraftPlaceholder");
         Date = new DateTimeOffset(DateTime.Today);
-        Motif = string.Empty;
         RetourMarchandise = false;
         CanEditDraft = true;
         await LoadDeviseAsync(cancellationToken);
@@ -456,17 +401,12 @@ public partial class AvoirEditViewModel : BaseViewModel
         var f = await db.Factures.Include(x => x.Lignes).FirstAsync(x => x.Id == factureId, cancellationToken);
         ClientId = f.ClientId;
         Numero = _locale.T("Avoir_DraftPlaceholder");
-        var catalogRefs = await DocumentLineCatalogLookups.LoadAsync(
-            db,
-            f.Lignes.Select(l => (l.ProduitId, l.ServiceId)),
-            cancellationToken);
         foreach (var l in f.Lignes)
         {
             Lignes.Add(new AvoirLineRow
             {
                 ProduitId = l.ProduitId,
                 ServiceId = l.ServiceId,
-                Reference = catalogRefs.GetReference(l.ProduitId, l.ServiceId),
                 Designation = l.Designation,
                 Conditionnement = l.Conditionnement,
                 Quantite = Math.Min(l.Quantite, 1),
@@ -497,27 +437,19 @@ public partial class AvoirEditViewModel : BaseViewModel
         ClientId = avoir.ClientId;
         Numero = avoir.Numero;
         Date = new DateTimeOffset(avoir.Date);
-        Motif = avoir.Motif;
         RetourMarchandise = avoir.RetourMarchandise;
         Lignes.Clear();
         ResetAddProductSearch();
-        var catalogRefs = await DocumentLineCatalogLookups.LoadAsync(
-            db,
-            avoir.Lignes.Select(l => (l.ProduitId, l.ServiceId)),
-            cancellationToken);
         foreach (var l in avoir.Lignes)
         {
             Lignes.Add(new AvoirLineRow
             {
                 ProduitId = l.ProduitId,
                 ServiceId = l.ServiceId,
-                Reference = catalogRefs.GetReference(l.ProduitId, l.ServiceId),
                 Designation = l.Designation,
                 Conditionnement = l.Conditionnement,
                 Quantite = l.Quantite,
-                PrixUnitaireHt = l.PrixUnitaireHT,
-                Remise = l.Remise,
-                TauxTva = l.TauxTVA
+                PrixUnitaireHt = l.PrixUnitaireHT
             });
         }
 
@@ -556,7 +488,6 @@ public partial class AvoirEditViewModel : BaseViewModel
                     FactureId = FactureId,
                     ClientId = ClientId,
                     Date = Date.DateTime,
-                    Motif = Motif,
                     RetourMarchandise = RetourMarchandise,
                     CreatedByUserId = _session.UserId
                 };
@@ -569,11 +500,11 @@ public partial class AvoirEditViewModel : BaseViewModel
                         Designation = l.Designation,
                         Conditionnement = l.Conditionnement,
                         Quantite = l.Quantite,
-                        PrixUnitaireHT = l.PrixUnitaireHt,
-                        Remise = l.Remise,
-                        TauxTVA = l.TauxTva
+                        PrixUnitaireHT = l.PrixUnitaireHt
                     });
                 }
+
+                DocumentTotalsHelper.SyncAvoirTotalTtc(entity);
 
                 db.Avoirs.Add(entity);                await db.SaveChangesAsync(cancellationToken);
                 AvoirId = entity.Id;
@@ -586,7 +517,6 @@ public partial class AvoirEditViewModel : BaseViewModel
                 entity.FactureId = FactureId;
                 entity.ClientId = ClientId;
                 entity.Date = Date.DateTime;
-                entity.Motif = Motif;
                 entity.RetourMarchandise = RetourMarchandise;
                 db.AvoirLignes.RemoveRange(entity.Lignes);
                 foreach (var l in Lignes)
@@ -598,11 +528,10 @@ public partial class AvoirEditViewModel : BaseViewModel
                         Designation = l.Designation,
                         Conditionnement = l.Conditionnement,
                         Quantite = l.Quantite,
-                        PrixUnitaireHT = l.PrixUnitaireHt,
-                        Remise = l.Remise,
-                        TauxTVA = l.TauxTva
+                        PrixUnitaireHT = l.PrixUnitaireHt
                     });
                 }
+                DocumentTotalsHelper.SyncAvoirTotalTtc(entity);
             }
             await _stock.SyncAvoirStockAsync(
                 db,

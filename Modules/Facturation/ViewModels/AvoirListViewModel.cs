@@ -64,8 +64,6 @@ public partial class AvoirListViewModel : BaseViewModel
     [ObservableProperty] private string _colClient = string.Empty;
     [ObservableProperty] private string _colDate = string.Empty;
     [ObservableProperty] private string _colFacture = string.Empty;
-    [ObservableProperty] private string _colMotif = string.Empty;
-    [ObservableProperty] private string _colHt = string.Empty;
     [ObservableProperty] private string _colTtc = string.Empty;
     [ObservableProperty] private string _menuDeleteAvoir = string.Empty;
 
@@ -82,9 +80,7 @@ public partial class AvoirListViewModel : BaseViewModel
         ColClient = _locale.T("Lbl_Client");
         ColDate = _locale.T("DevisList_ColDate");
         ColFacture = _locale.T("DocList_ColFacture");
-        ColMotif = _locale.T("Lbl_Motif");
-        ColHt = _locale.T("DevisList_ColHt");
-        ColTtc = _locale.T("DevisList_ColTtc");
+        ColTtc = _locale.T("Fact_ColTotal");
         MenuDeleteAvoir = _locale.T("Avoir_MenuDelete");
     }
 
@@ -115,7 +111,7 @@ public partial class AvoirListViewModel : BaseViewModel
             var cfg = await db.AppSettings.AsNoTracking().FirstAsync(cancellationToken);
             var devise = string.IsNullOrWhiteSpace(cfg.Devise) ? "MAD" : cfg.Devise.Trim();
 
-            var joined = from a in db.Avoirs.AsNoTracking().Include(a => a.Lignes)
+            var joined = from a in db.Avoirs.AsNoTracking()
                          join t in db.Tiers.AsNoTracking() on a.ClientId equals t.Id into tj
                          from t in tj.DefaultIfEmpty()
                          join f in db.Factures.AsNoTracking() on a.FactureId equals f.Id into fj
@@ -134,8 +130,7 @@ public partial class AvoirListViewModel : BaseViewModel
                 joinedQ = joinedQ.Where(x =>
                     EF.Functions.Like(x.a.Numero, $"%{search}%")
                     || EF.Functions.Like(x.nom, $"%{search}%")
-                    || EF.Functions.Like(x.factNum, $"%{search}%")
-                    || EF.Functions.Like(x.a.Motif ?? string.Empty, $"%{search}%"));
+                    || EF.Functions.Like(x.factNum, $"%{search}%"));
             }
 
             var total = await joinedQ.CountAsync(cancellationToken);
@@ -149,7 +144,7 @@ public partial class AvoirListViewModel : BaseViewModel
             var selId = Selected?.Avoir.Id;
             Items.Clear();
             foreach (var r in rows)
-                Items.Add(AvoirListRow.Create(r.a, r.nom, r.factNum, devise, _locale));
+                Items.Add(AvoirListRow.Create(r.a, r.nom, r.factNum, devise));
             Pagination.TotalCount = total;
             if (selId is { } id)
                 Selected = Items.FirstOrDefault(i => i.Avoir.Id == id);

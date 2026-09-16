@@ -9,7 +9,7 @@ public class Avoir : BaseEntity
     public Facture? Facture { get; set; }
     public int ClientId { get; set; }
     public DateTime Date { get; set; }
-    public string Motif { get; set; } = string.Empty;
     public bool RetourMarchandise { get; set; }
+    public decimal TotalTtc { get; set; }
     public List<AvoirLigne> Lignes { get; set; } = [];
 }

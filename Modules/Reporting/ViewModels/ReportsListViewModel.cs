@@ -575,20 +575,14 @@ public partial class ReportsListViewModel : BaseViewModel
 
     private ReportPdfModel BuildSalesByCustomerPdf(string? period, PdfTextAlignment right)
     {
+        var totalLabel = _locale.T("Fact_ColTotal");
         var rows = new List<ReportPdfRow>();
         foreach (var r in _filteredSalesByCustomer)
         {
-            rows.Add(PdfRow(r.Client, r.Ville, r.LblCount, r.LblHt, r.LblTtc, r.LblProfit, r.LblMargin));
+            rows.Add(PdfRow(r.Client, r.LblTtc, r.LblProfit, r.LblMargin));
             foreach (var p in r.Products)
-                rows.Add(PdfDetailRow($"  • {p.Reference} {p.Designation}", "", p.LblQty, p.LblHt, p.LblTtc, p.LblProfit, p.LblMargin));
+                rows.Add(PdfDetailRow($"  • {p.Reference} {p.Designation}", p.LblTtc, p.LblProfit, p.LblMargin));
         }
-
-        var summary = new List<PdfKeyValueLine>
-        {
-            new(LblSaleByCustomerLabelHt, LblSaleByCustomerTotalHt),
-            new(LblSaleByCustomerLabelTtc, LblSaleByCustomerTotalTtc),
-            new(LblSaleByCustomerLabelProfit, LblSaleByCustomerTotalProfit)
-        };
 
         return new ReportPdfModel
         {
@@ -596,16 +590,17 @@ public partial class ReportsListViewModel : BaseViewModel
             PeriodLabel = period,
             Columns =
             [
-                new(_locale.T("Lbl_Client"), 2f),
-                new(_locale.T("Lbl_ColVille"), 1f),
-                new(_locale.T("Reports_ColNbFactures"), 0.7f, right),
-                new(_locale.T("Reports_LblTotalHt"), 1.1f, right),
-                new(_locale.T("Reports_LblTotalTtc"), 1.1f, right),
+                new(_locale.T("Lbl_Client"), 2.2f),
+                new(totalLabel, 1.1f, right),
                 new(_locale.T("Reports_LblProfit"), 1.1f, right),
                 new(_locale.T("Reports_ColMarginPct"), 0.8f, right)
             ],
             Rows = rows,
-            SummaryLines = summary,
+            SummaryLines =
+            [
+                new(totalLabel, LblSaleByCustomerTotalTtc),
+                new(LblSaleByCustomerLabelProfit, LblSaleByCustomerTotalProfit)
+            ],
             Landscape = true
         };
     }

@@ -15,16 +15,13 @@
                Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
     </StackPanel>
     <Grid Grid.Row="1" RowDefinitions="Auto,*" Margin="0,8,0,0">
-      <Border Grid.Row="0" Padding="10,6" BorderThickness="1" CornerRadius="8,8,0,0"
-              Background="{DynamicResource CourseraSurfaceMutedBrush}" BorderBrush="{DynamicResource CourseraBorderBrush}">
-        <Grid ColumnDefinitions="0.95*,1.1*,0.75*,0.85*,1.15*,0.9*,0.9*">
-          <TextBlock Grid.Column="0" Text="{Binding ColNumero}" FontWeight="SemiBold"/>
-          <TextBlock Grid.Column="1" Text="{Binding ColClient}" FontWeight="SemiBold"/>
-          <TextBlock Grid.Column="2" Text="{Binding ColDate}" FontWeight="SemiBold"/>
-          <TextBlock Grid.Column="3" Text="{Binding ColFacture}" FontWeight="SemiBold"/>
-          <TextBlock Grid.Column="4" Text="{Binding ColMotif}" FontWeight="SemiBold"/>
-          <TextBlock Grid.Column="5" Text="{Binding ColHt}" FontWeight="SemiBold" TextAlignment="Right"/>
-          <TextBlock Grid.Column="6" Text="{Binding ColTtc}" FontWeight="SemiBold" TextAlignment="Right"/>
+      <Border Grid.Row="0" Background="{DynamicResource CourseraSurfaceBrush}" CornerRadius="8,8,0,0" Padding="10,8" Margin="0,0,0,1">
+        <Grid ColumnDefinitions="*,*,110,140,120">
+          <TextBlock Grid.Column="0" Text="{Binding ColNumero}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,12,0"/>
+          <TextBlock Grid.Column="1" Text="{Binding ColClient}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,12,0"/>
+          <TextBlock Grid.Column="2" Text="{Binding ColDate}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,12,0"/>
+          <TextBlock Grid.Column="3" Text="{Binding ColFacture}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,12,0"/>
+          <TextBlock Grid.Column="4" Text="{Binding ColTtc}" FontWeight="SemiBold" VerticalAlignment="Center" TextAlignment="End"/>
         </Grid>
       </Border>
       <ListBox Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}"
@@ -39,14 +36,12 @@
                             CommandParameter="{Binding}"/>
                 </ContextMenu>
               </Border.ContextMenu>
-              <Grid ColumnDefinitions="0.95*,1.1*,0.75*,0.85*,1.15*,0.9*,0.9*">
-                <TextBlock Grid.Column="0" Text="{Binding Avoir.Numero}" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="{Binding ClientNom}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Grid.Column="2" Text="{Binding DateShort}" VerticalAlignment="Center" Classes="subtle"/>
-                <TextBlock Grid.Column="3" Text="{Binding FactureNumero}" VerticalAlignment="Center" Classes="subtle" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Grid.Column="4" Text="{Binding MotifDisplay}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Grid.Column="5" Text="{Binding HtLabel}" VerticalAlignment="Center" TextAlignment="Right" Classes="subtle"/>
-                <TextBlock Grid.Column="6" Text="{Binding TtcLabel}" VerticalAlignment="Center" TextAlignment="Right" FontWeight="SemiBold"/>
+              <Grid ColumnDefinitions="*,*,110,140,120">
+                <TextBlock Grid.Column="0" Text="{Binding Avoir.Numero}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,12,0"/>
+                <TextBlock Grid.Column="1" Text="{Binding ClientNom}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,12,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding DateShort}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock Grid.Column="3" Text="{Binding FactureNumero}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,12,0"/>
+                <TextBlock Grid.Column="4" Text="{Binding TtcLabel}" VerticalAlignment="Center" FontWeight="SemiBold" TextAlignment="End"/>
               </Grid>
             </Border>
           </DataTemplate>

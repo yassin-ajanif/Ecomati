@@ -86,18 +86,22 @@ public static class DocumentTotalsHelper
     public static void SyncBonReceptionTotalTtc(BonReception bonReception) =>
         bonReception.TotalTtc = BonReceptionTtc(bonReception.Lignes);
 
+    public static decimal AvoirLigneMontant(AvoirLigne ligne) =>
+        ligne.Quantite * ligne.PrixUnitaireHT;
+
     public static (decimal ht, decimal tva, decimal ttc) AvoirTotals(IEnumerable<AvoirLigne> lignes)
     {
-        decimal ht = 0, tva = 0;
+        decimal total = 0;
         foreach (var l in lignes)
-        {
-            var lht = LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise);
-            ht += lht;
-            tva += lht * (l.TauxTVA / 100m);
-        }
-
-        return (ht, tva, ht + tva);
+            total += AvoirLigneMontant(l);
+        return (total, 0, total);
     }
+
+    public static decimal AvoirTtc(IEnumerable<AvoirLigne> lignes) =>
+        AvoirTotals(lignes).ttc;
+
+    public static void SyncAvoirTotalTtc(Avoir avoir) =>
+        avoir.TotalTtc = AvoirTtc(avoir.Lignes);
 
     public static (decimal ht, decimal tva, decimal ttc) AvoirFournisseurTotals(IEnumerable<AvoirFournisseurLigne> lignes)
     {

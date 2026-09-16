@@ -414,18 +414,21 @@ public partial class PosViewModel : BaseViewModel
                 ClientId = clientId,
                 FactureId = null,
                 Date = DateTime.Today,
-                Motif = "Remboursement POS",
                 RetourMarchandise = true
             };
             foreach (var l in Cart.Where(x => x.ProduitId is > 0))
             {
+                var pu = l.PrixUnitaireHt * (1 - l.EffectiveRemisePct / 100m) * (1 + l.TauxTva / 100m);
+                if (RemiseGlobale > 0)
+                    pu *= 1 - RemiseGlobale / 100m;
+                pu = Math.Round(pu, 2);
                 avoir.Lignes.Add(new AvoirLigne
                 {
                     ProduitId = l.ProduitId!.Value,
                     Designation = l.Designation,
                     Quantite = l.Quantite,
-                    PrixUnitaireHT = l.PrixUnitaireHt,
-                    TauxTVA = l.TauxTva
+                    PrixUnitaireHT = pu,
+                    Conditionnement = l.Conditionnement
                 });
             }
 
@@ -438,6 +441,7 @@ public partial class PosViewModel : BaseViewModel
                 return;
             }
 
+            DocumentTotalsHelper.SyncAvoirTotalTtc(avoir);
             db.Avoirs.Add(avoir);
             await db.SaveChangesAsync(cancellationToken);
             await _stock.SyncAvoirStockAsync(
