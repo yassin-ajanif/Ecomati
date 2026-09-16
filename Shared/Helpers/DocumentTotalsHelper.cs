@@ -26,34 +26,33 @@ public static class DocumentTotalsHelper
         }
     }
 
+    public static decimal FactureMontantPaye(IEnumerable<Paiement>? paiements) =>
+        paiements is null
+            ? 0
+            : paiements.Where(p => p.Mode != ModePaiement.Credit).Sum(p => p.Montant);
+
+    public static bool IsFacturePaid(decimal ttc, IEnumerable<Paiement>? paiements) =>
+        ttc > ZeroTotalTolerance && FactureMontantPaye(paiements) >= ttc - PaiementTtcTolerance;
+
     public static decimal LigneHT(decimal qte, decimal puHt, decimal remisePct) =>
         qte * puHt * (1 - remisePct / 100m);
 
-    public static (decimal ht, decimal tva, decimal ttc) FactureTotals(IEnumerable<FactureLigne> lignes, decimal remiseGlobalePct)
+    public static decimal FactureLigneMontant(FactureLigne ligne) =>
+        ligne.Quantite * ligne.PrixUnitaireHT;
+
+    public static (decimal ht, decimal tva, decimal ttc) FactureTotals(IEnumerable<FactureLigne> lignes)
     {
-        decimal ht = 0, tva = 0;
+        decimal total = 0;
         foreach (var l in lignes)
-        {
-            var lht = LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise);
-            ht += lht;
-            tva += lht * (l.TauxTVA / 100m);
-        }
-
-        if (remiseGlobalePct > 0)
-        {
-            var factor = 1 - remiseGlobalePct / 100m;
-            ht *= factor;
-            tva *= factor;
-        }
-
-        return (ht, tva, ht + tva);
+            total += FactureLigneMontant(l);
+        return (total, 0, total);
     }
 
-    public static decimal FactureTtc(IEnumerable<FactureLigne> lignes, decimal remiseGlobalePct) =>
-        FactureTotals(lignes, remiseGlobalePct).ttc;
+    public static decimal FactureTtc(IEnumerable<FactureLigne> lignes) =>
+        FactureTotals(lignes).ttc;
 
     public static void SyncFactureTotalTtc(Facture facture) =>
-        facture.TotalTtc = FactureTtc(facture.Lignes, facture.RemiseGlobale);
+        facture.TotalTtc = FactureTtc(facture.Lignes);
 
     public static (decimal ht, decimal tva, decimal ttc) FactureFournisseurTotals(IEnumerable<FactureFournisseurLigne> lignes, decimal remiseGlobalePct)
     {

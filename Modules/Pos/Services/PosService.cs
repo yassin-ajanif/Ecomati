@@ -183,39 +183,25 @@ public sealed class PosService : IPosService
         {
             Numero = numero,
             ClientId = clientId,
-            Date = DateTime.Today,
-            DateEcheance = DateTime.Today.AddDays(30),
-            EstPayee = payments.All(p => p.Mode == ModePaiement.Especes),
-            RemiseGlobale = remiseGlobale,
-            Note = "Vente POS"
+            Date = DateTime.Today
         };
-        db.Factures.Add(facture);
-        await db.SaveChangesAsync(cancellationToken);
-
         foreach (var line in cart)
         {
-            db.FactureLignes.Add(new FactureLigne
+            var pu = line.PrixUnitaireHt * (1 - line.Remise / 100m);
+            if (remiseGlobale > 0)
+                pu *= 1 - remiseGlobale / 100m;
+            facture.Lignes.Add(new FactureLigne
             {
-                FactureId = facture.Id,
                 ProduitId = line.IsService ? null : line.ProduitId,
                 ServiceId = line.IsService ? line.ServiceId : null,
                 Designation = line.Designation,
                 Quantite = line.Quantite,
-                PrixUnitaireHT = line.PrixUnitaireHt,
-                Remise = line.Remise,
-                TauxTVA = line.TauxTva,
+                PrixUnitaireHT = pu,
                 Conditionnement = line.Conditionnement
             });
         }
-        facture.TotalTtc = DocumentTotalsHelper.FactureTtc(
-            cart.Select(line => new FactureLigne
-            {
-                Quantite = line.Quantite,
-                PrixUnitaireHT = line.PrixUnitaireHt,
-                Remise = line.Remise,
-                TauxTVA = line.TauxTva
-            }),
-            remiseGlobale);
+        DocumentTotalsHelper.SyncFactureTotalTtc(facture);
+        db.Factures.Add(facture);
         await db.SaveChangesAsync(cancellationToken);
 
         await _stock.SyncFactureStockAsync(

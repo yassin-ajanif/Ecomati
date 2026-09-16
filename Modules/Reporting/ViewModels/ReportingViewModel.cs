@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using GestionCommerciale.Modules.Facturation.Models;
 using GestionCommerciale.Modules.Auth.Services;
 using GestionCommerciale.Modules.Stock;
 using GestionCommerciale.Shared.Database;
@@ -163,7 +164,7 @@ public partial class ReportingViewModel : BaseViewModel
             .Where(f => f.Date >= yearStart)
             .Select(f => new {
                 f.ClientId,
-                TTC = f.Lignes.Sum(l => l.Quantite * l.PrixUnitaireHT * (1m - l.Remise / 100m) * (1m + l.TauxTVA / 100m)) * (1m - f.RemiseGlobale / 100m)
+                TTC = f.TotalTtc
             })
             .GroupBy(x => x.ClientId)
             .Select(g => new { ClientId = g.Key, Total = g.Sum(x => x.TTC) })
@@ -228,47 +229,31 @@ public partial class ReportingViewModel : BaseViewModel
         }
 
         var unpaidProj = await db.Factures.AsNoTracking()
-            .Where(f => !f.EstPayee)
             .Select(f => new {
                 f.Numero,
-                f.DateEcheance,
-                TTC = f.Lignes.Sum(l => l.Quantite * l.PrixUnitaireHT * (1m - l.Remise / 100m) * (1m + l.TauxTVA / 100m)) * (1m - f.RemiseGlobale / 100m),
-                Paye = f.Paiements.Sum(p => (decimal?)p.Montant) ?? 0m
+                f.Date,
+                f.TotalTtc,
+                Paye = f.Paiements.Where(p => p.Mode != ModePaiement.Credit).Sum(p => (decimal?)p.Montant) ?? 0m
             })
-            .OrderBy(f => f.DateEcheance)
-            .Take(200)
+            .OrderBy(f => f.Date)
+            .Take(400)
             .ToListAsync(ct);
 
         var unpaidRows = new List<ReportUnpaidRow>();
         foreach (var f in unpaidProj)
         {
-            var reste = f.TTC - f.Paye;
+            var reste = f.TotalTtc - f.Paye;
             if (reste <= 0.01m) continue;
-
-            var due = f.DateEcheance.Date;
-            var daysFromDue = (now - due).Days;
-            string dueStatus;
-            var isOverdue = daysFromDue > 0;
-            var isDueSoon = false;
-            if (daysFromDue > 0)
-                dueStatus = _locale.Tf("Report_UnpaidOverdueFmt", daysFromDue.ToString(CultureInfo.CurrentCulture));
-            else if (daysFromDue == 0)
-                dueStatus = _locale.T("Report_UnpaidDueToday");
-            else
-            {
-                var until = -daysFromDue;
-                dueStatus = _locale.Tf("Report_UnpaidDueInFmt", until.ToString(CultureInfo.CurrentCulture));
-                if (until <= 7)
-                    isDueSoon = true;
-            }
 
             unpaidRows.Add(new ReportUnpaidRow(
                 f.Numero,
                 CurrencyHelper.Format(reste, dev),
-                f.DateEcheance.ToString("d", CultureInfo.CurrentCulture),
-                dueStatus,
-                isOverdue,
-                isDueSoon));
+                f.Date.ToString("d", CultureInfo.CurrentCulture),
+                _locale.T("Fact_Unpaid"),
+                false,
+                false));
+            if (unpaidRows.Count >= 200)
+                break;
         }
 
         return new ReportData
@@ -290,7 +275,7 @@ public partial class ReportingViewModel : BaseViewModel
     {
         return await db.Factures.AsNoTracking()
             .Where(f => f.Date >= from && f.Date < to)
-            .Select(f => (decimal?)f.Lignes.Sum(l => l.Quantite * l.PrixUnitaireHT * (1m - l.Remise / 100m) * (1m + l.TauxTVA / 100m)) * (1m - f.RemiseGlobale / 100m))
+            .Select(f => (decimal?)f.TotalTtc)
             .SumAsync(ct) ?? 0m;
     }
 

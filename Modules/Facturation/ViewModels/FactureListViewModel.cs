@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using GestionCommerciale.Modules.Facturation.Models;
 using GestionCommerciale.Modules.Stock.Services;
 using GestionCommerciale.Shared.Helpers;
 using GestionCommerciale.Shared.Database;
@@ -55,10 +56,8 @@ public partial class FactureListViewModel : BaseViewModel
     [ObservableProperty] private string _colHeaderRef = string.Empty;
     [ObservableProperty] private string _colHeaderParty = string.Empty;
     [ObservableProperty] private string _colHeaderDate = string.Empty;
-    [ObservableProperty] private string _colHeaderEcheance = string.Empty;
     [ObservableProperty] private string _colHeaderPayee = string.Empty;
     [ObservableProperty] private string _colHeaderTtc = string.Empty;
-    [ObservableProperty] private string _colHeaderNote = string.Empty;
     [ObservableProperty] private string _searchWatermark = string.Empty;
     [ObservableProperty] private string _lblPayeeFilterAll = string.Empty;
     [ObservableProperty] private string _lblPayeeFilterUnpaid = string.Empty;
@@ -79,10 +78,8 @@ public partial class FactureListViewModel : BaseViewModel
         ColHeaderRef = _locale.T("DevisList_ColRef");
         ColHeaderParty = _locale.T("Lbl_Client");
         ColHeaderDate = _locale.T("DevisList_ColDate");
-        ColHeaderEcheance = _locale.T("DocList_ColEcheance");
         ColHeaderPayee = _locale.T("FactList_ColPayee");
         ColHeaderTtc = _locale.T("DevisList_ColTtc");
-        ColHeaderNote = _locale.T("DevisList_ColNote");
         SearchWatermark = _locale.T("DocList_SearchPlaceholderClient");
     }
 
@@ -109,11 +106,16 @@ public partial class FactureListViewModel : BaseViewModel
             var cfg = await _settings.GetAsync(ct);
             var devise = string.IsNullOrWhiteSpace(cfg.Devise) ? "MAD" : cfg.Devise.Trim();
             await using var db = await _dbFactory.CreateDbContextAsync(ct);
-            var q = db.Factures.AsNoTracking().Include(f => f.Lignes).AsQueryable();
+            var q = db.Factures.AsNoTracking()
+                .Include(f => f.Paiements)
+                .AsQueryable();
             q = PayeeFilterIndex switch
             {
-                1 => q.Where(f => !f.EstPayee),
-                2 => q.Where(f => f.EstPayee),
+                1 => q.Where(f => (f.Paiements.Where(p => p.Mode != ModePaiement.Credit).Sum(p => (decimal?)p.Montant) ?? 0)
+                    < f.TotalTtc - DocumentTotalsHelper.PaiementTtcTolerance),
+                2 => q.Where(f => (f.Paiements.Where(p => p.Mode != ModePaiement.Credit).Sum(p => (decimal?)p.Montant) ?? 0)
+                    >= f.TotalTtc - DocumentTotalsHelper.PaiementTtcTolerance
+                    && f.TotalTtc > DocumentTotalsHelper.ZeroTotalTolerance),
                 _ => q,
             };
             if (_dateFrom.HasValue)

@@ -93,17 +93,7 @@ public class PerformanceTestService
         return startDate.AddDays(dayOffset).ToString("yyyy-MM-dd");
     }
 
-    private static decimal ComputeTtc(decimal ht, decimal tva, decimal remiseGlobalePct)
-    {
-        if (remiseGlobalePct > 0)
-        {
-            var factor = 1 - remiseGlobalePct / 100m;
-            ht *= factor;
-            tva *= factor;
-        }
-
-        return ht + tva;
-    }
+    private static decimal ComputeTtc(decimal ht) => ht;
 
     private static async Task InsertProductsAsync(SqliteConnection conn, long startId, string now, CancellationToken ct)
     {
@@ -152,9 +142,7 @@ public class PerformanceTestService
         public required long Id { get; init; }
         public required DateTime Date { get; init; }
         public required bool EstPayee { get; init; }
-        public required decimal RemiseGlobale { get; init; }
         public decimal TotalHt { get; set; }
-        public decimal TotalTva { get; set; }
         public decimal TotalTtc { get; set; }
     }
 
@@ -170,26 +158,23 @@ public class PerformanceTestService
         for (var i = 0; i < DocumentCount; i += batch)
         {
             var sb = new System.Text.StringBuilder();
-            sb.Append("INSERT INTO Factures (Id,CreatedAt,UpdatedAt,Numero,ClientId,Date,DateEcheance,EstPayee,RemiseGlobale,TotalTtc,Note) VALUES ");
+            sb.Append("INSERT INTO Factures (Id,CreatedAt,UpdatedAt,Numero,ClientId,Date,TotalTtc) VALUES ");
             var end = Math.Min(i + batch, DocumentCount);
             for (var j = i; j < end; j++)
             {
                 var id = startFact + j;
                 var clientId = clientStart + Rng.Next(0, ClientCount);
                 var date = DateTime.Parse(DateForDocumentIndex(startDate, j));
-                var echeance = date.AddDays(Rng.Next(15, 61));
                 var estPayee = Rng.NextDouble() < 0.5;
-                var remiseGlobale = Rng.NextDouble() < 0.15 ? Rng.Next(0, 501) / 100m : 0m;
                 var year = date.Year;
                 meta[j] = new FactureMeta
                 {
                     Id = id,
                     Date = date,
-                    EstPayee = estPayee,
-                    RemiseGlobale = remiseGlobale
+                    EstPayee = estPayee
                 };
                 if (j > i) sb.Append(',');
-                sb.Append(CultureInfo.InvariantCulture, $"({id},'{now}','{now}','FAC-{year}-{j:D6}',{clientId},'{date:yyyy-MM-dd}','{echeance:yyyy-MM-dd}',{(estPayee ? 1 : 0)},{remiseGlobale:F2},0,'')");
+                sb.Append(CultureInfo.InvariantCulture, $"({id},'{now}','{now}','FAC-{year}-{j:D6}',{clientId},'{date:yyyy-MM-dd}',0)");
             }
             await ExecAsync(conn, sb.ToString(), ct);
         }
@@ -220,23 +205,20 @@ public class PerformanceTestService
                 {
                     if (sb != null) await ExecAsync(conn, sb.ToString(), ct);
                     sb = new System.Text.StringBuilder();
-                    sb.Append("INSERT INTO FactureLignes (Id,CreatedAt,UpdatedAt,FactureId,ProduitId,Designation,Quantite,PrixUnitaireHT,Remise,TauxTVA,Conditionnement) VALUES ");
+                    sb.Append("INSERT INTO FactureLignes (Id,CreatedAt,UpdatedAt,FactureId,ProduitId,Designation,Quantite,PrixUnitaireHT,Conditionnement) VALUES ");
                 }
 
                 var id = startLigne + ligneIdx;
                 var prodId = prodStart + Rng.Next(0, ProductCount);
                 var qty = Rng.Next(1, 11);
                 var pu = Rng.Next(1000, 500_000) / 100m;
-                var remise = Rng.NextDouble() < 0.2 ? Rng.Next(0, 1001) / 100m : 0m;
-                var tva = Rng.NextDouble() < 0.7 ? 20m : 10m;
                 var desig = $"Produit {prodId}";
                 var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
-                var lht = qty * pu * (1 - remise / 100m);
+                var lht = qty * pu;
                 meta.TotalHt += lht;
-                meta.TotalTva += lht * (tva / 100m);
 
                 if (ligneIdx % batch > 0) sb!.Append(',');
-                sb!.Append(CultureInfo.InvariantCulture, $"({id},'{now}','{now}',{factId},{prodId},'{Escape(desig)}',{qty},{pu:F2},{remise:F2},{tva:F1},'U')");
+                sb!.Append(CultureInfo.InvariantCulture, $"({id},'{now}','{now}',{factId},{prodId},'{Escape(desig)}',{qty},{pu:F2},'U')");
                 seeds.Add((factId, prodId, qty));
                 ligneIdx++;
             }
@@ -250,7 +232,7 @@ public class PerformanceTestService
     {
         const int batch = 500;
         for (var i = 0; i < factureMeta.Length; i++)
-            factureMeta[i].TotalTtc = ComputeTtc(factureMeta[i].TotalHt, factureMeta[i].TotalTva, factureMeta[i].RemiseGlobale);
+            factureMeta[i].TotalTtc = ComputeTtc(factureMeta[i].TotalHt);
 
         for (var i = 0; i < factureMeta.Length; i += batch)
         {

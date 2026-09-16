@@ -31,7 +31,6 @@ public partial class FactureEditViewModel : BaseViewModel
     private readonly IServiceProvider _sp;
     private readonly ICurrentUserSession _session;
     private readonly ILocaleService _locale;
-    private readonly IUiPreferencesService _uiPreferences;
     private readonly IPdfService _pdf;
     private readonly IPdfPrintService _pdfPrint;
     private readonly AddLineCatalogSearchCoordinator _addLineSearch;
@@ -47,7 +46,6 @@ public partial class FactureEditViewModel : BaseViewModel
         IServiceProvider sp,
         ICurrentUserSession session,
         ILocaleService locale,
-        IUiPreferencesService uiPreferences,
         IPdfService pdf,
         IPdfPrintService pdfPrint,
         ICatalogSearchService catalogSearch)
@@ -62,7 +60,6 @@ public partial class FactureEditViewModel : BaseViewModel
         _sp = sp;
         _session = session;
         _locale = locale;
-        _uiPreferences = uiPreferences;
         _pdf = pdf;
         _pdfPrint = pdfPrint;
         _addLineSearch = new AddLineCatalogSearchCoordinator(catalogSearch);
@@ -71,8 +68,6 @@ public partial class FactureEditViewModel : BaseViewModel
             RefreshFactureUi();
             UpdateFactureTotalLines();
         };
-        LineGridColumns.PropertyChanged += OnLineGridColumnsPropertyChanged;
-        _uiPreferences.LoadDocumentLineColumns("facture", LineGridColumns);
         Title = _locale.T("Fact_Title");
         RefreshFactureUi();
     }
@@ -86,12 +81,6 @@ public partial class FactureEditViewModel : BaseViewModel
     [ObservableProperty] private GestionCommerciale.Modules.Tiers.Models.Tiers? _selectedClient;
     [ObservableProperty] private string _numero = string.Empty;
     [ObservableProperty] private DateTimeOffset _date = new(DateTime.Today);
-    [ObservableProperty] private DateTimeOffset _dateEcheance = new(DateTime.Today.AddDays(30));
-    [ObservableProperty] private bool _estPayee;
-    [ObservableProperty] private decimal _remiseGlobale;
-    [ObservableProperty] private string _note = string.Empty;
-    [ObservableProperty] private decimal _totalHt;
-    [ObservableProperty] private decimal _totalTva;
     [ObservableProperty] private decimal _totalTtc;
     [ObservableProperty] private decimal _montantPaye;
     [ObservableProperty] private bool _canEditDraft;
@@ -109,20 +98,14 @@ public partial class FactureEditViewModel : BaseViewModel
     [ObservableProperty] private string _btnBack = string.Empty;
     [ObservableProperty] private string _btnSave = string.Empty;
     [ObservableProperty] private string _menuDeleteFacture = string.Empty;
-    [ObservableProperty] private string _lblFactPayee = string.Empty;
-    [ObservableProperty] private string _lblPaid = string.Empty;
-    [ObservableProperty] private string _lblUnpaid = string.Empty;
     [ObservableProperty] private string _lblClient = string.Empty;
     [ObservableProperty] private string _wmClientSearch = string.Empty;
     [ObservableProperty] private string _lblDateFacture = string.Empty;
-    [ObservableProperty] private string _lblDateEcheance = string.Empty;
     [ObservableProperty] private string _btnRemoveLine = string.Empty;
     [ObservableProperty] private string _lblAddProduct = string.Empty;
     [ObservableProperty] private string _wmAddProduct = string.Empty;
     [ObservableProperty] private string _lblTotals = string.Empty;
     [ObservableProperty] private string _devise = string.Empty;
-    [ObservableProperty] private string _totalHtLabel = string.Empty;
-    [ObservableProperty] private string _totalTvaLabel = string.Empty;
     [ObservableProperty] private string _totalTtcLabel = string.Empty;
     [ObservableProperty] private string _montantPayeLine = string.Empty;
     [ObservableProperty] private string _lblPaymentsRecorded = string.Empty;
@@ -136,40 +119,18 @@ public partial class FactureEditViewModel : BaseViewModel
     [ObservableProperty] private string _btnDelete = string.Empty;
     [ObservableProperty] private string _btnCancel = string.Empty;
     [ObservableProperty] private string _payEditTooltip = string.Empty;
-    [ObservableProperty] private string _lblDocLineColumnsHint = string.Empty;
-    [ObservableProperty] private string _lblDocColRef = string.Empty;
     [ObservableProperty] private string _lblDocColDesignation = string.Empty;
     [ObservableProperty] private string _lblDocColQte = string.Empty;
     [ObservableProperty] private string _lblDocColCond = string.Empty;
     [ObservableProperty] private string _wmDocLineUnite = string.Empty;
     [ObservableProperty] private string _lblDocColPuHt = string.Empty;
-    [ObservableProperty] private string _lblDocColRemise = string.Empty;
-    [ObservableProperty] private string _lblDocColTva = string.Empty;
-    [ObservableProperty] private string _lblDocColMontantHt = string.Empty;
-    [ObservableProperty] private string _lblDocColMontantTtc = string.Empty;
-
-    public DocumentLineGridColumnState LineGridColumns { get; } = new();
-    public bool ShowTotalTva => LineGridColumns.ShowTva && LineGridColumns.ShowMontantTtc;
-    public bool ShowTotalTtc => LineGridColumns.ShowMontantTtc && LineGridColumns.ShowTva;
-    public bool HighlightHtTotal => !ShowTotalTtc;
+    [ObservableProperty] private string _lblDocColTotal = string.Empty;
 
     public ObservableCollection<DocumentCatalogItem> AddLineSearchResults => _addLineSearch.Results;
 
     public AutoCompleteFilterPredicate<object?> PartyAutocompleteFilter => PartyAutoComplete.ItemFilter;
 
     private bool _suppressAddLinePick;
-
-    private void OnLineGridColumnsPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(DocumentLineGridColumnState.ShowTva) or nameof(DocumentLineGridColumnState.ShowMontantTtc))
-        {
-            OnPropertyChanged(nameof(ShowTotalTva));
-            OnPropertyChanged(nameof(ShowTotalTtc));
-            OnPropertyChanged(nameof(HighlightHtTotal));
-            RefreshTotals();
-        }
-        _uiPreferences.SaveDocumentLineColumns("facture", LineGridColumns);
-    }
 
     private void RefreshFactureUi()
     {
@@ -181,7 +142,6 @@ public partial class FactureEditViewModel : BaseViewModel
         LblClient = _locale.T("Lbl_Client");
         WmClientSearch = _locale.T("Wm_SearchClient");
         LblDateFacture = _locale.T("Lbl_DateFacture");
-        LblDateEcheance = _locale.T("Lbl_DateEcheance");
         BtnRemoveLine = _locale.T("Btn_RemoveLine");
         LblAddProduct = _locale.T("Devis_LblAddProduct");
         WmAddProduct = _locale.T("Wm_SearchCatalog");
@@ -197,26 +157,16 @@ public partial class FactureEditViewModel : BaseViewModel
         BtnDelete = _locale.T("Btn_Delete");
         BtnCancel = _locale.T("Btn_Cancel");
         PayEditTooltip = _locale.T("Pay_EditTooltip");
-        LblFactPayee = _locale.T("Fact_LblPayee");
-        LblPaid = _locale.T("Fact_Paid");
-        LblUnpaid = _locale.T("Fact_Unpaid");
-        LblDocLineColumnsHint = _locale.T("DocLine_ColumnsHint");
-        LblDocColRef = _locale.T("DocLine_ColRef");
         LblDocColDesignation = _locale.T("DocLine_ColDesignation");
         LblDocColQte = _locale.T("DocLine_ColQte");
         LblDocColCond = _locale.T("DocLine_ColCond");
         WmDocLineUnite = _locale.T("DocLine_WmUnite");
         LblDocColPuHt = _locale.T("DocLine_ColPuHt");
-        LblDocColRemise = _locale.T("DocLine_ColRemise");
-        LblDocColTva = _locale.T("DocLine_ColTva");
-        LblDocColMontantHt = _locale.T("DocLine_ColMontantHt");
-        LblDocColMontantTtc = _locale.T("DocLine_ColMontantTtc");
+        LblDocColTotal = _locale.T("Fact_ColTotal");
     }
 
     private void UpdateFactureTotalLines()
     {
-        TotalHtLabel = _locale.Tf("Doc_FmtHt", TotalHt, Devise).TrimEnd();
-        TotalTvaLabel = _locale.Tf("Doc_FmtTva", TotalTva, Devise).TrimEnd();
         TotalTtcLabel = _locale.Tf("Doc_FmtTtc", TotalTtc, Devise).TrimEnd();
         MontantPayeLine = _locale.Tf("Doc_FmtPaye", MontantPaye);
     }
@@ -433,18 +383,12 @@ public partial class FactureEditViewModel : BaseViewModel
 
     private void RefreshTotals()
     {
-        var includeTvaInTotals = ShowTotalTtc;
         var lines = Lignes.Select(l => new FactureLigne
         {
             Quantite = l.Quantite,
-            PrixUnitaireHT = l.PrixUnitaireHt,
-            Remise = l.Remise,
-            TauxTVA = includeTvaInTotals ? l.TauxTva : 0
+            PrixUnitaireHT = l.PrixUnitaireHt
         });
-        var (ht, tva, ttc) = DocumentTotalsHelper.FactureTotals(lines, RemiseGlobale);
-        TotalHt = ht;
-        TotalTva = tva;
-        TotalTtc = ttc;
+        TotalTtc = DocumentTotalsHelper.FactureTtc(lines);
         UpdateFactureTotalLines();
         RefreshSuggestedPaiementMontant();
     }
@@ -452,8 +396,7 @@ public partial class FactureEditViewModel : BaseViewModel
     private void RefreshSuggestedPaiementMontant()
     {
         if (!FactureId.HasValue) return;
-        var fullTtc = ComputeFullPaymentTtc();
-        PaiementMontant = Math.Round(Math.Max(0, fullTtc - MontantPaye), 2);
+        PaiementMontant = Math.Round(Math.Max(0, ComputeFullPaymentTtc() - MontantPaye), 2);
     }
 
     private decimal ComputeFullPaymentTtc() =>
@@ -461,11 +404,8 @@ public partial class FactureEditViewModel : BaseViewModel
             Lignes.Select(l => new FactureLigne
             {
                 Quantite = l.Quantite,
-                PrixUnitaireHT = l.PrixUnitaireHt,
-                Remise = l.Remise,
-                TauxTVA = l.TauxTva
-            }),
-            RemiseGlobale);
+                PrixUnitaireHT = l.PrixUnitaireHt
+            }));
 
     private async Task<bool> ValidatePaymentsAgainstTtcAsync(decimal ttc, decimal totalPayments, CancellationToken cancellationToken)
     {
@@ -478,8 +418,6 @@ public partial class FactureEditViewModel : BaseViewModel
             cancellationToken);
         return false;
     }
-
-    partial void OnRemiseGlobaleChanged(decimal value) => RefreshTotals();
 
     partial void OnSelectedClientChanged(GestionCommerciale.Modules.Tiers.Models.Tiers? value)
     {
@@ -509,8 +447,6 @@ public partial class FactureEditViewModel : BaseViewModel
             Numero = _locale.T("Fact_NewNumPlaceholder");
             ClientId = Clients.FirstOrDefault()?.Id ?? 0;
             Date = new DateTimeOffset(DateTime.Today);
-            DateEcheance = Date.AddDays(30);
-            EstPayee = false;
             CanEditDraft = true;
             Title = _locale.T("Fact_NewTitle");
             MontantPaye = 0;
@@ -524,27 +460,16 @@ public partial class FactureEditViewModel : BaseViewModel
         Numero = f.Numero;
         ClientId = f.ClientId;
         Date = new DateTimeOffset(f.Date);
-        DateEcheance = new DateTimeOffset(f.DateEcheance);
-        EstPayee = f.EstPayee;
-        RemiseGlobale = f.RemiseGlobale;
-        Note = f.Note;
-        var catalogRefs = await DocumentLineCatalogLookups.LoadAsync(
-            db,
-            f.Lignes.Select(l => (l.ProduitId, l.ServiceId)),
-            cancellationToken);
         foreach (var l in f.Lignes)
         {
             var row = new FactureLineRow
             {
                 ProduitId = l.ProduitId,
                 ServiceId = l.ServiceId,
-                Reference = catalogRefs.GetReference(l.ProduitId, l.ServiceId),
                 Designation = l.Designation,
                 Conditionnement = l.Conditionnement,
                 Quantite = l.Quantite,
-                PrixUnitaireHt = l.PrixUnitaireHT,
-                Remise = l.Remise,
-                TauxTva = l.TauxTVA
+                PrixUnitaireHt = l.PrixUnitaireHT
             };
             Lignes.Add(row);
         }
@@ -627,10 +552,6 @@ public partial class FactureEditViewModel : BaseViewModel
                     Numero = num,
                     ClientId = ClientId,
                     Date = Date.DateTime,
-                    DateEcheance = DateEcheance.DateTime,
-                    EstPayee = EstPayee,
-                    RemiseGlobale = RemiseGlobale,
-                    Note = Note,
                     CreatedByUserId = _session.UserId
                 };
                 foreach (var l in Lignes)
@@ -642,9 +563,7 @@ public partial class FactureEditViewModel : BaseViewModel
                         Designation = l.Designation,
                         Conditionnement = l.Conditionnement,
                         Quantite = l.Quantite,
-                        PrixUnitaireHT = l.PrixUnitaireHt,
-                        Remise = l.Remise,
-                        TauxTVA = l.TauxTva
+                        PrixUnitaireHT = l.PrixUnitaireHt
                     });
                 }
 
@@ -659,10 +578,6 @@ public partial class FactureEditViewModel : BaseViewModel
 
                 entity.ClientId = ClientId;
                 entity.Date = Date.DateTime;
-                entity.DateEcheance = DateEcheance.DateTime;
-                entity.EstPayee = EstPayee;
-                entity.RemiseGlobale = RemiseGlobale;
-                entity.Note = Note;
                 db.FactureLignes.RemoveRange(entity.Lignes);
                 foreach (var l in Lignes)
                 {
@@ -673,9 +588,7 @@ public partial class FactureEditViewModel : BaseViewModel
                         Designation = l.Designation,
                         Conditionnement = l.Conditionnement,
                         Quantite = l.Quantite,
-                        PrixUnitaireHT = l.PrixUnitaireHt,
-                        Remise = l.Remise,
-                        TauxTVA = l.TauxTva
+                        PrixUnitaireHT = l.PrixUnitaireHt
                     });
                 }
 

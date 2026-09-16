@@ -470,9 +470,7 @@ public partial class AvoirEditViewModel : BaseViewModel
                 Designation = l.Designation,
                 Conditionnement = l.Conditionnement,
                 Quantite = Math.Min(l.Quantite, 1),
-                PrixUnitaireHt = l.PrixUnitaireHT,
-                Remise = l.Remise,
-                TauxTva = l.TauxTVA
+                PrixUnitaireHt = l.PrixUnitaireHT
             });
         }
 

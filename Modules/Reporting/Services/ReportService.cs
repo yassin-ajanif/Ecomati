@@ -44,8 +44,6 @@ public sealed class ReportService : IReportService
                 l.ServiceId,
                 l.Quantite,
                 l.PrixUnitaireHT,
-                l.Remise,
-                l.TauxTVA,
                 l.Designation
             })
             .ToListAsync(ct);
@@ -75,10 +73,9 @@ public sealed class ReportService : IReportService
             {
                 var p = prodMap.GetValueOrDefault(g.Key);
                 var prixAchat = p?.PrixAchatHT ?? 0;
-                var ht = g.Sum(l => DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise));
+                var ht = g.Sum(l => l.Quantite * l.PrixUnitaireHT);
                 var cost = g.Sum(l => l.Quantite * prixAchat);
                 var profit = ht - cost;
-                var tva = g.Sum(l => DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise) * (l.TauxTVA / 100m));
                 var marginPct = ht > 0 ? profit / ht * 100m : 0;
                 return new ReportSaleByProductRow(
                     p?.Reference ?? string.Empty,
@@ -86,7 +83,7 @@ public sealed class ReportService : IReportService
                     p?.Categorie ?? string.Empty,
                     g.Sum(l => l.Quantite),
                     ht,
-                    ht + tva,
+                    ht,
                     dev,
                     profit,
                     marginPct);
@@ -99,10 +96,9 @@ public sealed class ReportService : IReportService
             {
                 var s = svcMap.GetValueOrDefault(g.Key);
                 var cout = s?.CoutHT ?? 0;
-                var ht = g.Sum(l => DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise));
+                var ht = g.Sum(l => l.Quantite * l.PrixUnitaireHT);
                 var cost = g.Sum(l => l.Quantite * cout);
                 var profit = ht - cost;
-                var tva = g.Sum(l => DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise) * (l.TauxTVA / 100m));
                 var marginPct = ht > 0 ? profit / ht * 100m : 0;
                 return new ReportSaleByProductRow(
                     s?.Reference ?? string.Empty,
@@ -110,7 +106,7 @@ public sealed class ReportService : IReportService
                     serviceCategory,
                     g.Sum(l => l.Quantite),
                     ht,
-                    ht + tva,
+                    ht,
                     dev,
                     profit,
                     marginPct);
@@ -134,15 +130,12 @@ public sealed class ReportService : IReportService
             {
                 f.Id,
                 f.ClientId,
-                f.RemiseGlobale,
                 Lignes = f.Lignes!.Select(l => new
                 {
                     l.ProduitId,
                     l.ServiceId,
                     l.Quantite,
                     l.PrixUnitaireHT,
-                    l.Remise,
-                    l.TauxTVA,
                     l.Designation
                 }).ToList()
             })
@@ -189,17 +182,16 @@ public sealed class ReportService : IReportService
                     {
                         var p = prodMap.GetValueOrDefault(pg.Key);
                         var prixAchat = p?.PrixAchatHT ?? 0;
-                        var ht = pg.Sum(l => DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise));
+                        var ht = pg.Sum(l => l.Quantite * l.PrixUnitaireHT);
                         var cost = pg.Sum(l => l.Quantite * prixAchat);
                         var profit = ht - cost;
-                        var tva = pg.Sum(l => DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise) * (l.TauxTVA / 100m));
                         var marginPct = ht > 0 ? profit / ht * 100m : 0;
                         return new ReportSaleByCustomerProductRow(
                             p?.Reference ?? string.Empty,
                             p?.Designation ?? pg.First().Designation,
                             pg.Sum(l => l.Quantite),
                             ht,
-                            ht + tva,
+                            ht,
                             dev,
                             profit,
                             marginPct);
@@ -212,17 +204,16 @@ public sealed class ReportService : IReportService
                     {
                         var s = svcMap.GetValueOrDefault(sg.Key);
                         var cout = s?.CoutHT ?? 0;
-                        var ht = sg.Sum(l => DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise));
+                        var ht = sg.Sum(l => l.Quantite * l.PrixUnitaireHT);
                         var cost = sg.Sum(l => l.Quantite * cout);
                         var profit = ht - cost;
-                        var tva = sg.Sum(l => DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise) * (l.TauxTVA / 100m));
                         var marginPct = ht > 0 ? profit / ht * 100m : 0;
                         return new ReportSaleByCustomerProductRow(
                             s?.Reference ?? string.Empty,
                             s?.Designation ?? sg.First().Designation,
                             sg.Sum(l => l.Quantite),
                             ht,
-                            ht + tva,
+                            ht,
                             dev,
                             profit,
                             marginPct);
@@ -233,20 +224,18 @@ public sealed class ReportService : IReportService
                     .ToList();
 
                 // Client-level totals with profit (global discount applied)
-                decimal totalHt = 0, totalTva = 0, totalCost = 0;
+                decimal totalHt = 0, totalCost = 0;
                 foreach (var f in g)
                 {
-                    var factor = 1 - f.RemiseGlobale / 100m;
                     foreach (var l in f.Lignes)
                     {
-                        var lht = DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise);
+                        var lht = l.Quantite * l.PrixUnitaireHT;
                         decimal unitCost = 0;
                         if (l.ProduitId is int pid)
                             unitCost = prodMap.GetValueOrDefault(pid)?.PrixAchatHT ?? 0;
                         else if (l.ServiceId is int sid)
                             unitCost = svcMap.GetValueOrDefault(sid)?.CoutHT ?? 0;
-                        totalHt += lht * factor;
-                        totalTva += lht * (l.TauxTVA / 100m) * factor;
+                        totalHt += lht;
                         totalCost += l.Quantite * unitCost;
                     }
                 }
@@ -260,7 +249,7 @@ public sealed class ReportService : IReportService
                     c?.Ville ?? string.Empty,
                     g.Count(),
                     totalHt,
-                    totalHt + totalTva,
+                    totalHt,
                     dev,
                     totalProfit,
                     marginPct,
@@ -339,15 +328,12 @@ public sealed class ReportService : IReportService
                 f.ClientId,
                 f.Numero,
                 f.Date,
-                f.RemiseGlobale,
                 Lignes = f.Lignes!.Select(l => new
                 {
                     l.ProduitId,
                     l.ServiceId,
                     l.Quantite,
-                    l.PrixUnitaireHT,
-                    l.Remise,
-                    l.TauxTVA
+                    l.PrixUnitaireHT
                 }).ToList()
             })
             .ToListAsync(ct);
@@ -381,28 +367,23 @@ public sealed class ReportService : IReportService
             .GroupBy(f => f.Date.Date)
             .Select(g =>
             {
-                decimal dayHt = 0, dayTva = 0, dayCost = 0;
+                decimal dayHt = 0, dayCost = 0;
 
                 var details = g.Select(f =>
                 {
-                    var factor = 1 - f.RemiseGlobale / 100m;
-                    decimal ht = 0, tva = 0, cost = 0;
+                    decimal ht = 0, cost = 0;
                     foreach (var l in f.Lignes)
                     {
-                        var lht = DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise);
+                        var lht = l.Quantite * l.PrixUnitaireHT;
                         decimal unitCost = 0;
                         if (l.ProduitId is int pid)
                             unitCost = prodMap.GetValueOrDefault(pid)?.PrixAchatHT ?? 0;
                         else if (l.ServiceId is int sid)
                             unitCost = svcMap.GetValueOrDefault(sid)?.CoutHT ?? 0;
                         ht += lht;
-                        tva += lht * (l.TauxTVA / 100m);
                         cost += l.Quantite * unitCost;
                     }
-                    ht *= factor;
-                    tva *= factor;
                     dayHt += ht;
-                    dayTva += tva;
                     dayCost += cost;
                     var profit = ht - cost;
                     var marginPct = ht > 0 ? profit / ht * 100m : 0;
@@ -410,7 +391,7 @@ public sealed class ReportService : IReportService
                         f.Numero ?? string.Empty,
                         clientMap.GetValueOrDefault(f.ClientId)?.Nom ?? string.Empty,
                         ht,
-                        ht + tva,
+                        ht,
                         dev,
                         profit,
                         marginPct);
@@ -423,8 +404,8 @@ public sealed class ReportService : IReportService
                     g.Key,
                     g.Count(),
                     dayHt,
-                    dayTva,
-                    dayHt + dayTva,
+                    0,
+                    dayHt,
                     dev,
                     dayProfit,
                     dayMargin,
@@ -535,15 +516,12 @@ public sealed class ReportService : IReportService
             {
                 f.Numero,
                 f.Date,
-                f.RemiseGlobale,
                 Lignes = f.Lignes!.Select(l => new
                 {
                     l.ProduitId,
                     l.ServiceId,
                     l.Quantite,
-                    l.PrixUnitaireHT,
-                    l.Remise,
-                    l.TauxTVA
+                    l.PrixUnitaireHT
                 }).ToList()
             })
             .ToListAsync(ct);
@@ -591,18 +569,15 @@ public sealed class ReportService : IReportService
         decimal totalAvoirsClient = 0;
         foreach (var f in factures)
         {
-            var factor = 1 - f.RemiseGlobale / 100m;
             decimal ttc = 0, costHt = 0;
             foreach (var l in f.Lignes)
             {
-                var lht = DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise);
-                ttc += lht * (1 + l.TauxTVA / 100m);
+                ttc += l.Quantite * l.PrixUnitaireHT;
                 if (l.ProduitId is int pid)
                     costHt += l.Quantite * prodMap.GetValueOrDefault(pid);
                 else if (l.ServiceId is int sid)
                     costHt += l.Quantite * svcMap.GetValueOrDefault(sid);
             }
-            ttc *= factor;
             var profit = ttc - costHt;
             totalMargin += profit;
             totalVente += ttc;

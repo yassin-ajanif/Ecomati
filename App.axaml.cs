@@ -227,15 +227,16 @@ public partial class App : Application
             var tableExists = Convert.ToInt64(tableCheck.ExecuteScalar() ?? 0L) > 0;
             if (!tableExists) return;
 
-            using var colCheck = conn.CreateCommand();
-            colCheck.CommandText =
-                "SELECT COUNT(*) FROM pragma_table_info('Factures') WHERE name = 'EstPayee';";
-            if (Convert.ToInt64(colCheck.ExecuteScalar() ?? 0L) > 0) return;
-
             using var statutCheck = conn.CreateCommand();
             statutCheck.CommandText =
                 "SELECT COUNT(*) FROM pragma_table_info('Factures') WHERE name = 'Statut';";
             var hasStatut = Convert.ToInt64(statutCheck.ExecuteScalar() ?? 0L) > 0;
+            if (!hasStatut) return;
+
+            using var colCheck = conn.CreateCommand();
+            colCheck.CommandText =
+                "SELECT COUNT(*) FROM pragma_table_info('Factures') WHERE name = 'EstPayee';";
+            if (Convert.ToInt64(colCheck.ExecuteScalar() ?? 0L) > 0) return;
 
             using (var alter = conn.CreateCommand())
             {

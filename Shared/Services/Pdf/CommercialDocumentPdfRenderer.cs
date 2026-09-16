@@ -200,7 +200,7 @@ public static class CommercialDocumentPdfRenderer
                 col.Spacing(6);
                 col.Item().Row(r =>
                 {
-                    r.RelativeItem().Text("Total HT :").FontColor(TextSecondary);
+                    r.RelativeItem().Text(model.ShowTaxAndTtcInTotalsBox ? "Total HT :" : "Total :").FontColor(TextSecondary);
                     r.AutoItem().Text($"{model.TotalHt:N2} {model.Devise}").SemiBold();
                 });
                 if (model.ShowTaxAndTtcInTotalsBox)

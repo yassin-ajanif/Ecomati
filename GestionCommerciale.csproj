@@ -23,8 +23,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <AvaloniaResource Include="Assets\**" />
+    <Compile Remove="Modules\Devis\**" />
+    <Compile Remove="Modules\Livraison\**" />
+    <Compile Remove="Modules\CommandeClient\**" />
+    <AvaloniaXaml Remove="Modules\Devis\**" />
+    <AvaloniaXaml Remove="Modules\Livraison\**" />
+    <AvaloniaXaml Remove="Modules\CommandeClient\**" />
+    <None Remove="Modules\Devis\**" />
+    <None Remove="Modules\Livraison\**" />
+    <None Remove="Modules\CommandeClient\**" />
+    <Compile Remove="Modules\Facturation\Services\FactureBlLinkService.cs" />
+    <Compile Remove="Modules\Facturation\Services\IFactureBlLinkService.cs" />
+    <Compile Remove="Modules\Facturation\Services\FactureBccLinkService.cs" />
+    <Compile Remove="Modules\Facturation\Services\IFactureBccLinkService.cs" />
   </ItemGroup>
+
 
   <!-- dotnet watch: rebuild when Avalonia views change (not only .cs) -->
   <ItemGroup>

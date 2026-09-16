@@ -118,45 +118,35 @@ public sealed class PdfService : IPdfService
     public async Task<byte[]> BuildFacturePdfAsync(Facture facture, DocumentPartyPdfInfo party, CancellationToken cancellationToken = default)
     {
         var cfg = await _settings.GetAsync(cancellationToken);
-        var meta = await LoadProductMetaAsync(facture.Lignes.Select(l => l.ProduitId), cancellationToken);
-        var svcMeta = await LoadServiceMetaAsync(facture.Lignes.Select(l => l.ServiceId), cancellationToken);
-        var totals = DocumentTotalsHelper.FactureTotals(facture.Lignes, facture.RemiseGlobale);
-        var vis = _uiPreferences.GetDocumentLineColumnVisibility("facture");
-        var lineData = new List<StandardPdfLine>();
-        foreach (var l in facture.Lignes)
+        var totals = DocumentTotalsHelper.FactureTotals(facture.Lignes);
+        var columns = new List<PdfTableColumn>
         {
-            var lht = DocumentTotalsHelper.LigneHT(l.Quantite, l.PrixUnitaireHT, l.Remise);
-            var ttc = lht * (1 + l.TauxTVA / 100m);
-            lineData.Add(new StandardPdfLine(
-                DocumentLineRef(meta, svcMeta, l.ProduitId, l.ServiceId),
+            new("Désignation", 2.2f, PdfTextAlignment.Start),
+            new("Type", 0.8f, PdfTextAlignment.Center),
+            new("Qté", 0.7f, PdfTextAlignment.Center),
+            new("Prix", 0.8f, PdfTextAlignment.Center),
+            new("Total", 0.9f, PdfTextAlignment.Center)
+        };
+        var rows = facture.Lignes.Select(l =>
+        {
+            var montant = DocumentTotalsHelper.FactureLigneMontant(l);
+            return (IReadOnlyList<string>)new[]
+            {
                 l.Designation,
+                l.Conditionnement,
                 FmtQty(l.Quantite),
-                string.IsNullOrWhiteSpace(l.Conditionnement)
-                    ? DocumentLineUnite(meta, svcMeta, l.ProduitId, l.ServiceId, null)
-                    : l.Conditionnement,
                 FmtUnitPrice(l.PrixUnitaireHT),
-                FmtTvaPct(l.TauxTVA),
-                FmtMoney(l.Remise),
-                FmtMoney(lht),
-                FmtMoney(ttc)));
-        }
-
-        var (cols, rows) = BuildStandardPdfTable(vis, supportsLineRemise: true, "Qté", lineData);
+                FmtMoney(montant)
+            };
+        }).ToList();
 
         var docLines = new List<PdfKeyValueLine>
         {
             new("N°", facture.Numero),
-            new("Date", facture.Date.ToString("dd/MM/yyyy")),
-            new("Échéance", facture.DateEcheance.ToString("dd/MM/yyyy"))
+            new("Date", facture.Date.ToString("dd/MM/yyyy"))
         };
 
-        // var pay = SummarizePaiements(facture.Paiements);
-        // if (!string.IsNullOrWhiteSpace(pay))
-        //     docLines.Add(new("Payé par", pay!));
-        if (facture.RemiseGlobale > 0)
-            docLines.Add(new("Remise globale", $"{facture.RemiseGlobale:N2} %"));
-
-        var model = BaseModel(cfg, "FACTURE", docLines, PartyLines(party, "Client"), cols, rows, totals, facture.Note, vis.ShowMontantTtc);
+        var model = BaseModel(cfg, "FACTURE", docLines, PartyLines(party, "Client"), columns, rows, totals, null, showTaxAndTtcInTotalsBox: false);
         return CommercialDocumentPdfRenderer.Render(model, TryLoadLogoBytes(cfg.SocieteLogoPath));
     }
 
