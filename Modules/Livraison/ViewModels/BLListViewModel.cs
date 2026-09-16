@@ -279,7 +279,7 @@ public partial class BLListViewModel : BaseViewModel
         }
 
         var vm = _sp.GetRequiredService<FactureEditViewModel>();
-        await vm.LoadFromBlsAsync(blIds, cancellationToken);
+        vm.Load(null);
         _workspace.Open(vm);
     }
 }

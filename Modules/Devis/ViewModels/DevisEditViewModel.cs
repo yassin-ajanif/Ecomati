@@ -624,7 +624,7 @@ public partial class DevisEditViewModel : BaseViewModel
     {
         if (DevisId == null) return;
         var vm = _sp.GetRequiredService<FactureEditViewModel>();
-        vm.LoadFromDevis(DevisId.Value);
+        vm.Load(null);
         _workspace.Open(vm);
     }
 

@@ -769,7 +769,7 @@ public partial class BLEditViewModel : BaseViewModel
         }
 
         var vm = _sp.GetRequiredService<FactureEditViewModel>();
-        vm.LoadFromBL(BlId.Value);
+        vm.Load(null);
         _workspace.Open(vm);
     }
 
