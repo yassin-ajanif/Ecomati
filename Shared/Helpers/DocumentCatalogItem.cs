@@ -20,6 +20,7 @@ public sealed class DocumentCatalogItem
     public decimal PrixVenteHT { get; init; }
     public decimal PrixAchatHT { get; init; }
     public decimal TauxTVA { get; init; }
+    public decimal PrixVenteTtc => Math.Round(PrixVenteHT * (1 + TauxTVA / 100m), 2);
     public byte[]? ImageData { get; init; }
 
     public string DisplayLabel => $"{Reference} — {Designation}";

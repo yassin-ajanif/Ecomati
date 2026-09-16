@@ -123,7 +123,7 @@ public partial class FactureEditViewModel : BaseViewModel
     [ObservableProperty] private string _lblDocColQte = string.Empty;
     [ObservableProperty] private string _lblDocColCond = string.Empty;
     [ObservableProperty] private string _wmDocLineUnite = string.Empty;
-    [ObservableProperty] private string _lblDocColPuHt = string.Empty;
+    [ObservableProperty] private string _lblDocColPrice = string.Empty;
     [ObservableProperty] private string _lblDocColTotal = string.Empty;
 
     public ObservableCollection<DocumentCatalogItem> AddLineSearchResults => _addLineSearch.Results;
@@ -161,7 +161,7 @@ public partial class FactureEditViewModel : BaseViewModel
         LblDocColQte = _locale.T("DocLine_ColQte");
         LblDocColCond = _locale.T("DocLine_ColCond");
         WmDocLineUnite = _locale.T("DocLine_WmUnite");
-        LblDocColPuHt = _locale.T("DocLine_ColPuHt");
+        LblDocColPrice = _locale.T("Fact_ColPrice");
         LblDocColTotal = _locale.T("Fact_ColTotal");
     }
 

@@ -187,9 +187,10 @@ public sealed class PosService : IPosService
         };
         foreach (var line in cart)
         {
-            var pu = line.PrixUnitaireHt * (1 - line.Remise / 100m);
+            var pu = line.PrixUnitaireHt * (1 - line.Remise / 100m) * (1 + line.TauxTva / 100m);
             if (remiseGlobale > 0)
                 pu *= 1 - remiseGlobale / 100m;
+            pu = Math.Round(pu, 2);
             facture.Lignes.Add(new FactureLigne
             {
                 ProduitId = line.IsService ? null : line.ProduitId,

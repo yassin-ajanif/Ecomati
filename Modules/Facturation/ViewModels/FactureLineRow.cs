@@ -27,7 +27,7 @@ public partial class FactureLineRow : ObservableObject
         ServiceId = null;
         Designation = p.Designation;
         Conditionnement = p.Unite;
-        PrixUnitaireHt = p.PrixVenteHT;
+        PrixUnitaireHt = Math.Round(p.PrixVenteHT * (1 + p.TauxTVA / 100m), 2);
         NotifyMontants();
     }
 
@@ -37,7 +37,7 @@ public partial class FactureLineRow : ObservableObject
         ProduitId = null;
         Designation = s.Designation;
         Conditionnement = s.Unite;
-        PrixUnitaireHt = s.PrixVenteHT;
+        PrixUnitaireHt = Math.Round(s.PrixVenteHT * (1 + s.TauxTVA / 100m), 2);
         NotifyMontants();
     }
 
@@ -56,7 +56,7 @@ public partial class FactureLineRow : ObservableObject
 
         Designation = item.Designation;
         Conditionnement = item.Unite;
-        PrixUnitaireHt = item.PrixVenteHT;
+        PrixUnitaireHt = item.PrixVenteTtc;
         NotifyMontants();
     }
 

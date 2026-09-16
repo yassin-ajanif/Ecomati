@@ -95,7 +95,7 @@
               <TextBlock Grid.Column="0" Text="{Binding LblDocColDesignation}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"/>
               <TextBlock Grid.Column="1" Text="{Binding LblDocColCond}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"/>
               <TextBlock Grid.Column="2" Text="{Binding LblDocColQte}" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0"/>
-              <TextBlock Grid.Column="3" Text="{Binding LblDocColPuHt}" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0"/>
+              <TextBlock Grid.Column="3" Text="{Binding LblDocColPrice}" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0"/>
               <TextBlock Grid.Column="4" Text="{Binding LblDocColTotal}" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
           </Border>

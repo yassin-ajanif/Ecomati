@@ -140,6 +140,7 @@ internal static class UiTranslationExtras
         ["DocLine_ColTva"] = ("TVA %", "ضريبة %"),
         ["DocLine_ColMontantHt"] = ("Montant HT", "المبلغ بدون ضريبة"),
         ["DocLine_ColMontantTtc"] = ("Montant TTC", "المبلغ الإجمالي"),
+        ["Fact_ColPrice"] = ("Prix", "الثمن"),
         ["Fact_ColTotal"] = ("Total", "المجموع"),
 
         ["Lbl_ColNom"] = ("Nom", "الاسم"),
