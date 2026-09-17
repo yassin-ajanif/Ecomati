@@ -8,8 +8,9 @@
         MinHeight="360"
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
-  <Border Padding="16">
+        CanResize="False"
+        FlowDirection="LeftToRight">
+  <Border Padding="16" FlowDirection="LeftToRight">
     <StackPanel Spacing="12">
       <TextBlock Text="{Binding LblFormula}" FontSize="12" FontWeight="SemiBold" Opacity="0.8" TextWrapping="Wrap"/>
 

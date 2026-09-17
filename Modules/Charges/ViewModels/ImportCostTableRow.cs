@@ -1,3 +1,4 @@
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace GestionCommerciale.Modules.Charges.ViewModels;
@@ -8,9 +9,25 @@ public sealed class ImportRmbExpenseMemory
     public decimal Montant { get; set; }
 }
 
-public partial class ImportCostTableRow : ObservableObject
+/// <summary>Lightweight product pick for the import table designation Autocomplete.</summary>
+public sealed class ImportProductPick
 {
-    [ObservableProperty] private string _reference = string.Empty;
+    public int Id { get; init; }
+    public string Designation { get; init; } = string.Empty;
+    public byte[]? ImageData { get; init; }
+    public override string ToString() => Designation;
+}
+
+public partial class ImportCostTableRow : ObservableObject, IDisposable
+{
+    [ObservableProperty] private string _designation = string.Empty;
+    [ObservableProperty] private int? _produitId;
+    [ObservableProperty] private bool _isExistingProduct;
+    [ObservableProperty] private Bitmap? _productImage;
+    [ObservableProperty] private bool _hasProductImage;
+    [ObservableProperty] private ImportProductPick? _selectedProduct;
+
+    private bool _applyingProduct;
     [ObservableProperty] private decimal? _pm;
     [ObservableProperty] private decimal? _pc;
     [ObservableProperty] private decimal? _rmb;
@@ -28,6 +45,82 @@ public partial class ImportCostTableRow : ObservableObject
     public List<ImportRmbExpenseMemory> RmbExpenses { get; } = [];
     public bool HasRmbMemory => RmbGrosPrice.HasValue || RmbExpenses.Count > 0;
 
+    /// <summary>Backward-compatible alias used by older bindings.</summary>
+    public string Reference
+    {
+        get => Designation;
+        set => Designation = value;
+    }
+
+    partial void OnSelectedProductChanged(ImportProductPick? value)
+    {
+        if (value is null)
+            return;
+        ApplyProduct(value.Id, value.Designation, value.ImageData);
+    }
+
+    partial void OnDesignationChanged(string value)
+    {
+        if (_applyingProduct)
+            return;
+        if (SelectedProduct is not null &&
+            string.Equals(SelectedProduct.Designation, value, StringComparison.Ordinal))
+            return;
+
+        ClearProductLink();
+    }
+
+    public void ApplyProduct(int produitId, string designation, byte[]? imageData)
+    {
+        _applyingProduct = true;
+        try
+        {
+            ProduitId = produitId;
+            IsExistingProduct = true;
+            Designation = designation;
+            SetProductImage(imageData);
+        }
+        finally
+        {
+            _applyingProduct = false;
+        }
+    }
+
+    public void ClearProductLink()
+    {
+        ProduitId = null;
+        IsExistingProduct = false;
+        if (SelectedProduct is not null)
+            SelectedProduct = null;
+        SetProductImage(null);
+    }
+
+    public void SetProductImage(byte[]? bytes)
+    {
+        ProductImage?.Dispose();
+        ProductImage = null;
+        HasProductImage = false;
+        if (bytes is null || bytes.Length == 0)
+            return;
+        try
+        {
+            using var ms = new MemoryStream(bytes);
+            ProductImage = new Bitmap(ms);
+            HasProductImage = true;
+        }
+        catch
+        {
+            ProductImage = null;
+            HasProductImage = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        ProductImage?.Dispose();
+        ProductImage = null;
+    }
+
     partial void OnPmChanged(decimal? value) => RecalcDerived();
     partial void OnPcChanged(decimal? value) => RecalcDerived();
     partial void OnRmbChanged(decimal? value) => RecalcDerived();
@@ -36,13 +129,11 @@ public partial class ImportCostTableRow : ObservableObject
 
     private void RecalcDerived()
     {
-        // PAF = RMB × P/C
         if (Rmb is decimal rmb && Pc is decimal pc)
             LaDouane = rmb * pc;
         else
             LaDouane = null;
 
-        // M = P/M − PAF  (e.g. 40 − 2.5×11)
         if (Pm is decimal pm && LaDouane is decimal paf)
             M = pm - paf;
         else
@@ -53,7 +144,6 @@ public partial class ImportCostTableRow : ObservableObject
 
     private void RecalcTm()
     {
-        // T M = M × CNT PS  (e.g. 12.5 × 32)
         if (M is decimal m && CntPs is decimal cnt)
             Tm = m * cnt;
         else
@@ -64,19 +154,16 @@ public partial class ImportCostTableRow : ObservableObject
 
     private void RecalcDownstreamFromColis()
     {
-        // M/NET = T M × CNT COLIS  (e.g. 400 × 18)
         if (Tm is decimal tm && CntColis is decimal colisForNet)
             MNet = tm * colisForNet;
         else
             MNet = null;
 
-        // CA = PAF × CNT PS × CNT COLIS  (e.g. 27.5 × 32 × 18)
         if (LaDouane is decimal paf && CntPs is decimal cnt && CntColis is decimal colisForCa)
             Ca = paf * cnt * colisForCa;
         else
             Ca = null;
 
-        // T/M = P/M × CNT PS × CNT COLIS  (e.g. 40 × 32 × 18)
         if (Pm is decimal pm && CntPs is decimal cntPs && CntColis is decimal cntColis)
             TMarge = pm * cntPs * cntColis;
         else

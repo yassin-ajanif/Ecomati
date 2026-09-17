@@ -7,6 +7,8 @@
   <ScrollViewer>
     <StackPanel Spacing="12" Margin="4,8,4,32">
       <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold"/>
+
+      <!-- Temporary: old calculator section (formulas / gros / frais / totals) hidden until we decide what to keep.
       <StackPanel Orientation="Horizontal" Spacing="8">
         <Border Padding="10,6" CornerRadius="6" Background="#F1F5F9" BorderBrush="#CBD5E1" BorderThickness="1">
           <TextBlock Text="{Binding LblHelp}" FontSize="12" FontWeight="SemiBold" Foreground="#334155"/>
@@ -127,42 +129,46 @@
           </StackPanel>
         </Border>
       </Grid>
+      -->
 
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <TextBlock Text="{Binding LblTableTitle}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-        <Button Content="{Binding BtnAddRow}" Command="{Binding AddTableRowCommand}"/>
-      </StackPanel>
+      <StackPanel Spacing="12" FlowDirection="LeftToRight">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="{Binding LblTableTitle}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+          <Button Content="{Binding BtnAddRow}" Command="{Binding AddTableRowCommand}"/>
+          <Button Content="{Binding BtnAddAllProducts}" Command="{Binding AddAllProductsCommand}"/>
+        </StackPanel>
 
-      <Border BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="8"
-              Background="{DynamicResource CourseraSurfaceBrush}" HorizontalAlignment="Stretch">
-        <Grid RowDefinitions="Auto,*" HorizontalAlignment="Stretch">
+        <Border BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="8"
+                Background="{DynamicResource CourseraSurfaceBrush}" HorizontalAlignment="Stretch"
+                FlowDirection="LeftToRight">
+          <Grid RowDefinitions="Auto,*,Auto" HorizontalAlignment="Stretch" FlowDirection="LeftToRight">
           <Border Grid.Row="0" Background="{DynamicResource CourseraSurfaceMutedBrush}" Padding="8,8"
                   CornerRadius="8,8,0,0">
             <Grid ColumnDefinitions="1.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28">
               <TextBlock Grid.Column="0" Text="{Binding ColReference}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center"/>
               <TextBlock Grid.Column="1" Text="{Binding ColPm}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
               <TextBlock Grid.Column="2" Text="{Binding ColPc}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-              <Border Grid.Column="3" Background="#FEF9C3" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+              <Border Grid.Column="3" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
                 <TextBlock Text="{Binding ColRmb}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
               </Border>
-              <Border Grid.Column="4" Background="#FEF9C3" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+              <Border Grid.Column="4" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
                 <TextBlock Text="{Binding ColLaDouane}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
               </Border>
-              <Border Grid.Column="5" Background="#FEF9C3" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+              <Border Grid.Column="5" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
                 <TextBlock Text="{Binding ColM}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
               </Border>
               <TextBlock Grid.Column="6" Text="{Binding ColCntPs}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-              <Border Grid.Column="7" Background="#FEF9C3" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+              <Border Grid.Column="7" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
                 <TextBlock Text="{Binding ColTm}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
               </Border>
               <TextBlock Grid.Column="8" Text="{Binding ColCntColis}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-              <Border Grid.Column="9" Background="#FEF9C3" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+              <Border Grid.Column="9" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
                 <TextBlock Text="{Binding ColMNet}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
               </Border>
-              <Border Grid.Column="10" Background="#FEF9C3" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+              <Border Grid.Column="10" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
                 <TextBlock Text="{Binding ColCa}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
               </Border>
-              <Border Grid.Column="11" Background="#FEF9C3" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+              <Border Grid.Column="11" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
                 <TextBlock Text="{Binding ColTMarge}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
               </Border>
             </Grid>
@@ -177,8 +183,51 @@
               <DataTemplate DataType="vm:ImportCostTableRow">
                 <Border Padding="6,4" BorderBrush="#18000000" BorderThickness="0,0,0,1" HorizontalAlignment="Stretch">
                   <Grid MinHeight="34" ColumnDefinitions="1.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28" HorizontalAlignment="Stretch">
-                    <TextBox Grid.Column="0" Text="{Binding Reference}" Padding="4,2" Margin="0,0,4,0"
-                             HorizontalAlignment="Stretch"/>
+                    <Grid Grid.Column="0" ColumnDefinitions="*,28" Margin="0,0,4,0">
+                      <AutoCompleteBox MinimumPrefixLength="0"
+                                       MaxDropDownHeight="280"
+                                       Watermark="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).WmProduct}"
+                                       ItemsSource="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).ProductCatalog}"
+                                       ItemFilter="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).ProductItemFilter}"
+                                       Text="{Binding Designation, Mode=TwoWay}"
+                                       SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                                       HorizontalAlignment="Stretch">
+                        <AutoCompleteBox.ValueMemberBinding>
+                          <Binding Path="Designation"/>
+                        </AutoCompleteBox.ValueMemberBinding>
+                        <AutoCompleteBox.ItemTemplate>
+                          <DataTemplate DataType="vm:ImportProductPick">
+                            <TextBlock Text="{Binding Designation}" TextTrimming="CharacterEllipsis"/>
+                          </DataTemplate>
+                        </AutoCompleteBox.ItemTemplate>
+                      </AutoCompleteBox>
+                      <Border Grid.Column="1" Width="24" Height="24" Margin="2,0,0,0"
+                              VerticalAlignment="Center" HorizontalAlignment="Center"
+                              Cursor="Hand" Background="Transparent"
+                              ToolTip.ShowDelay="200">
+                        <ToolTip.Tip>
+                          <Border Padding="10" Background="White" CornerRadius="8"
+                                  BorderBrush="#CBD5E1" BorderThickness="1"
+                                  BoxShadow="0 4 16 0 #33000000" MaxWidth="420">
+                            <Panel>
+                              <Image Source="{Binding ProductImage}"
+                                     Width="360" Height="360" Stretch="Uniform"
+                                     IsVisible="{Binding HasProductImage}"/>
+                              <TextBlock Text="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).MsgNoProduct}"
+                                         IsVisible="{Binding !IsExistingProduct}"
+                                         FontSize="14" FontWeight="SemiBold"
+                                         Foreground="#64748B" TextWrapping="Wrap"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                         Margin="12"/>
+                            </Panel>
+                          </Border>
+                        </ToolTip.Tip>
+                        <Viewbox Width="16" Height="16">
+                          <Path Fill="#3730A3"
+                                Data="M4,4 L16,4 C17.1,4 18,4.9 18,6 L18,14 C18,15.1 17.1,16 16,16 L4,16 C2.9,16 2,15.1 2,14 L2,6 C2,4.9 2.9,4 4,4 Z M4,6 L4,14 L16,14 L16,6 Z M7,9 A1.5,1.5 0 1 0 7,6 A1.5,1.5 0 1 0 7,9 Z M5,13 L8,10 L10,12 L13,8 L15,13 Z"/>
+                        </Viewbox>
+                      </Border>
+                    </Grid>
                     <NumericUpDown Grid.Column="1" ShowButtonSpinner="False" Value="{Binding Pm}" FormatString="N2"
                                    Minimum="0" Increment="0.01" Margin="0,0,3,0" HorizontalAlignment="Stretch"/>
                     <NumericUpDown Grid.Column="2" ShowButtonSpinner="False" Value="{Binding Pc}" FormatString="N2"
@@ -186,7 +235,7 @@
                     <Grid Grid.Column="3" ColumnDefinitions="*,Auto" Margin="0,0,3,0">
                       <NumericUpDown ShowButtonSpinner="False" Value="{Binding Rmb}" FormatString="N2"
                                      Minimum="0" Increment="0.01" HorizontalAlignment="Stretch"
-                                     Background="#FEF9C3"/>
+                                     Background="#EEF2FF"/>
                       <Button Grid.Column="1"
                               ToolTip.Tip="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).TipCalcRmb}"
                               Command="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).CalculateRmbCommand}"
@@ -201,26 +250,26 @@
                     </Grid>
                     <NumericUpDown Grid.Column="4" ShowButtonSpinner="False" Value="{Binding LaDouane}" FormatString="N2"
                                    Minimum="0" Increment="0.01" Margin="0,0,3,0" HorizontalAlignment="Stretch"
-                                   Background="#FEF9C3" IsEnabled="False"/>
+                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
                     <NumericUpDown Grid.Column="5" ShowButtonSpinner="False" Value="{Binding M}" FormatString="N2"
                                    Increment="0.01" Margin="0,0,3,0" HorizontalAlignment="Stretch"
-                                   Background="#FEF9C3" IsEnabled="False"/>
+                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
                     <NumericUpDown Grid.Column="6" ShowButtonSpinner="False" Value="{Binding CntPs}" FormatString="N0"
                                    Minimum="0" Increment="1" Margin="0,0,3,0" HorizontalAlignment="Stretch"/>
                     <NumericUpDown Grid.Column="7" ShowButtonSpinner="False" Value="{Binding Tm}" FormatString="N2"
                                    Increment="1" Margin="0,0,3,0" HorizontalAlignment="Stretch"
-                                   Background="#FEF9C3" IsEnabled="False"/>
+                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
                     <NumericUpDown Grid.Column="8" ShowButtonSpinner="False" Value="{Binding CntColis}" FormatString="N0"
                                    Minimum="0" Increment="1" Margin="0,0,3,0" HorizontalAlignment="Stretch"/>
                     <NumericUpDown Grid.Column="9" ShowButtonSpinner="False" Value="{Binding MNet}" FormatString="N2"
                                    Increment="1" Margin="0,0,2,0" HorizontalAlignment="Stretch"
-                                   Background="#FEF9C3" IsEnabled="False"/>
+                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
                     <NumericUpDown Grid.Column="10" ShowButtonSpinner="False" Value="{Binding Ca}" FormatString="N2"
                                    Increment="1" Margin="0,0,2,0" HorizontalAlignment="Stretch"
-                                   Background="#FEF9C3" IsEnabled="False"/>
+                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
                     <NumericUpDown Grid.Column="11" ShowButtonSpinner="False" Value="{Binding TMarge}" FormatString="N2"
                                    Increment="1" Margin="0,0,2,0" HorizontalAlignment="Stretch"
-                                   Background="#FEF9C3" IsEnabled="False"/>
+                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
                     <Button Grid.Column="12"
                             ToolTip.Tip="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).BtnRemove}"
                             Command="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).RemoveTableRowCommand}"
@@ -238,8 +287,29 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+          <Border Grid.Row="2" Background="#E0E7FF" Padding="8,8" CornerRadius="0,0,8,8"
+                  BorderBrush="#18000000" BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="1.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28"
+                  MinHeight="34" HorizontalAlignment="Stretch">
+              <TextBlock Grid.Column="0" Text="{Binding LblTotal}" FontWeight="Bold" FontSize="12"
+                         VerticalAlignment="Center" Margin="0,0,4,0"/>
+              <Border Grid.Column="9" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
+                <TextBlock Text="{Binding TotalMNet, StringFormat=N2}" FontWeight="Bold" FontSize="12"
+                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
+              </Border>
+              <Border Grid.Column="10" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
+                <TextBlock Text="{Binding TotalCa, StringFormat=N2}" FontWeight="Bold" FontSize="12"
+                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
+              </Border>
+              <Border Grid.Column="11" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
+                <TextBlock Text="{Binding TotalTMarge, StringFormat=N2}" FontWeight="Bold" FontSize="12"
+                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
+              </Border>
+            </Grid>
+          </Border>
         </Grid>
       </Border>
+      </StackPanel>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

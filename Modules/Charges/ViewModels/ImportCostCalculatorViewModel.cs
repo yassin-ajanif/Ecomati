@@ -6,9 +6,11 @@ using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GestionCommerciale.Modules.Charges.Views;
+using GestionCommerciale.Shared.Database;
 using GestionCommerciale.Shared.Helpers;
 using GestionCommerciale.Shared.Services;
 using GestionCommerciale.Shared.ViewModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace GestionCommerciale.Modules.Charges.ViewModels;
 
@@ -16,21 +18,38 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
 {
     private readonly ILocaleService _locale;
     private readonly IAppSettingsService _settings;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
 
-    public ImportCostCalculatorViewModel(ILocaleService locale, IAppSettingsService settings)
+    public ImportCostCalculatorViewModel(
+        ILocaleService locale,
+        IAppSettingsService settings,
+        IDbContextFactory<AppDbContext> dbFactory)
     {
         _locale = locale;
         _settings = settings;
+        _dbFactory = dbFactory;
         _locale.CultureApplied += (_, _) => RefreshUi();
         Expenses.CollectionChanged += ExpensesOnCollectionChanged;
+        TableRows.CollectionChanged += TableRowsOnCollectionChanged;
         RefreshUi();
         AddExpense();
         AddTableRow();
         _ = LoadDeviseAsync();
+        _ = LoadProductsAsync();
     }
 
     public ObservableCollection<ImportCostExpenseRow> Expenses { get; } = [];
     public ObservableCollection<ImportCostTableRow> TableRows { get; } = [];
+    public ObservableCollection<ImportProductPick> ProductCatalog { get; } = [];
+
+    public AutoCompleteFilterPredicate<object?> ProductItemFilter { get; } = static (search, item) =>
+    {
+        if (item is not ImportProductPick p)
+            return false;
+        if (string.IsNullOrWhiteSpace(search))
+            return true;
+        return p.Designation.Contains(search, StringComparison.OrdinalIgnoreCase);
+    };
 
     [ObservableProperty] private decimal _grosPrice;
     [ObservableProperty] private decimal _unitPriceRmb;
@@ -65,6 +84,10 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
     [ObservableProperty] private string _marginLabel = string.Empty;
     [ObservableProperty] private string _lblTableTitle = string.Empty;
     [ObservableProperty] private string _btnAddRow = string.Empty;
+    [ObservableProperty] private string _btnAddAllProducts = string.Empty;
+    [ObservableProperty] private string _wmProduct = string.Empty;
+    [ObservableProperty] private string _tipProductImage = string.Empty;
+    [ObservableProperty] private string _msgNoProduct = string.Empty;
     [ObservableProperty] private string _colReference = string.Empty;
     [ObservableProperty] private string _colPm = string.Empty;
     [ObservableProperty] private string _colPc = string.Empty;
@@ -78,6 +101,10 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
     [ObservableProperty] private string _colCa = string.Empty;
     [ObservableProperty] private string _colTMarge = string.Empty;
     [ObservableProperty] private string _tipCalcRmb = string.Empty;
+    [ObservableProperty] private string _lblTotal = string.Empty;
+    [ObservableProperty] private decimal _totalMNet;
+    [ObservableProperty] private decimal _totalCa;
+    [ObservableProperty] private decimal _totalTMarge;
 
     partial void OnGrosPriceChanged(decimal value) => Recalc();
     partial void OnUnitPriceRmbChanged(decimal value) => Recalc();
@@ -89,6 +116,25 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
         var cfg = await _settings.GetAsync();
         var fromSettings = CurrencyHelper.FromSettings(cfg);
         Devise = string.IsNullOrWhiteSpace(fromSettings) ? "MAD" : fromSettings;
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        var list = await db.Produits.AsNoTracking()
+            .Where(p => p.Actif)
+            .OrderBy(p => p.Designation)
+            .Select(p => new ImportProductPick
+            {
+                Id = p.Id,
+                Designation = p.Designation,
+                ImageData = p.ImageData
+            })
+            .ToListAsync();
+
+        ProductCatalog.Clear();
+        foreach (var p in list)
+            ProductCatalog.Add(p);
     }
 
     private void RefreshUi()
@@ -111,7 +157,11 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
         LblMargin = _locale.T("Calc_Margin");
         LblTableTitle = _locale.T("Calc_TableTitle");
         BtnAddRow = _locale.T("Calc_AddRow");
-        ColReference = _locale.T("Calc_ColReference");
+        BtnAddAllProducts = _locale.T("Calc_AddAllProducts");
+        WmProduct = _locale.T("Calc_WmProduct");
+        TipProductImage = _locale.T("Calc_TipProductImage");
+        MsgNoProduct = _locale.T("Calc_MsgNoProduct");
+        ColReference = _locale.T("Calc_ColDesignation");
         ColPm = _locale.T("Calc_ColPm");
         ColPc = _locale.T("Calc_ColPc");
         ColRmb = _locale.T("Calc_ColRmb");
@@ -124,7 +174,45 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
         ColCa = _locale.T("Calc_ColCa");
         ColTMarge = _locale.T("Calc_ColTMarge");
         TipCalcRmb = _locale.T("Calc_CalcRmb");
+        LblTotal = _locale.T("Calc_Total");
         UpdateResultLabels();
+    }
+
+    private void TableRowsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == NotifyCollectionChangedAction.Reset)
+        {
+            RecalcTableTotals();
+            return;
+        }
+
+        if (e.OldItems != null)
+        {
+            foreach (ImportCostTableRow row in e.OldItems)
+                row.PropertyChanged -= TableRowChanged;
+        }
+        if (e.NewItems != null)
+        {
+            foreach (ImportCostTableRow row in e.NewItems)
+                row.PropertyChanged += TableRowChanged;
+        }
+        RecalcTableTotals();
+    }
+
+    private void TableRowChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ImportCostTableRow.MNet)
+            or nameof(ImportCostTableRow.Ca)
+            or nameof(ImportCostTableRow.TMarge)
+            or null)
+            RecalcTableTotals();
+    }
+
+    private void RecalcTableTotals()
+    {
+        TotalMNet = TableRows.Sum(r => r.MNet ?? 0);
+        TotalCa = TableRows.Sum(r => r.Ca ?? 0);
+        TotalTMarge = TableRows.Sum(r => r.TMarge ?? 0);
     }
 
     private void ExpensesOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -163,7 +251,34 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
     private void RemoveTableRow(ImportCostTableRow? row)
     {
         if (row != null)
+        {
+            row.Dispose();
             TableRows.Remove(row);
+        }
+        if (TableRows.Count == 0)
+            AddTableRow();
+    }
+
+    [RelayCommand]
+    private async Task AddAllProductsAsync()
+    {
+        if (ProductCatalog.Count == 0)
+            await LoadProductsAsync();
+
+        foreach (var row in TableRows.ToList())
+        {
+            row.PropertyChanged -= TableRowChanged;
+            row.Dispose();
+        }
+        TableRows.Clear();
+
+        foreach (var p in ProductCatalog)
+        {
+            var row = new ImportCostTableRow();
+            row.ApplyProduct(p.Id, p.Designation, p.ImageData);
+            TableRows.Add(row);
+        }
+
         if (TableRows.Count == 0)
             AddTableRow();
     }
