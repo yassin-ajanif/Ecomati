@@ -1,0 +1,92 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:GestionCommerciale.Modules.Charges.ViewModels"
+        x:Class="GestionCommerciale.Modules.Charges.Views.ImportRmbCoeffDialog"
+        x:DataType="vm:ImportRmbCoeffDialogViewModel"
+        Title="{Binding Title}"
+        Width="520"
+        MinHeight="360"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+  <Border Padding="16">
+    <StackPanel Spacing="12">
+      <TextBlock Text="{Binding LblFormula}" FontSize="12" FontWeight="SemiBold" Opacity="0.8" TextWrapping="Wrap"/>
+
+      <StackPanel Spacing="4">
+        <TextBlock Text="{Binding LblGros}" FontWeight="SemiBold" FontSize="12"/>
+        <Grid ColumnDefinitions="*,Auto">
+          <NumericUpDown Value="{Binding GrosPrice}" FormatString="N2" Minimum="0" Increment="1"
+                         HorizontalAlignment="Stretch" Margin="0,0,8,0"/>
+          <TextBlock Grid.Column="1" Text="{Binding Devise}" VerticalAlignment="Center" Opacity="0.75" FontWeight="SemiBold"/>
+        </Grid>
+      </StackPanel>
+
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <TextBlock Text="{Binding LblExpenses}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+        <Button Grid.Column="2" Content="{Binding BtnAddExpense}" Command="{Binding AddExpenseCommand}" Padding="10,4"/>
+      </Grid>
+
+      <Border BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="8"
+              Background="{DynamicResource CourseraSurfaceBrush}" MaxHeight="220">
+        <ScrollViewer>
+          <StackPanel>
+            <Border Background="{DynamicResource CourseraSurfaceMutedBrush}" Padding="8,6"
+                    CornerRadius="8,8,0,0">
+              <Grid ColumnDefinitions="*,140,44,40">
+                <TextBlock Grid.Column="0" Text="{Binding LblExpenseLabel}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{Binding LblExpenseAmount}" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding Devise}" FontWeight="SemiBold" VerticalAlignment="Center" Opacity="0.75"/>
+              </Grid>
+            </Border>
+            <ItemsControl ItemsSource="{Binding Expenses}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:ImportCostExpenseRow">
+                  <Border Padding="6,4" BorderBrush="#18000000" BorderThickness="0,0,0,1">
+                    <Grid MinHeight="34" ColumnDefinitions="*,140,44,40">
+                      <TextBox Grid.Column="0" Text="{Binding Libelle}" Padding="6,4" Margin="0,0,8,0"/>
+                      <NumericUpDown Grid.Column="1" ShowButtonSpinner="False" Value="{Binding Montant}"
+                                     FormatString="N2" Minimum="0" Increment="1"
+                                     HorizontalAlignment="Stretch" Margin="0,0,8,0"/>
+                      <TextBlock Grid.Column="2" Text="{Binding $parent[Window].((vm:ImportRmbCoeffDialogViewModel)DataContext).Devise}"
+                                 VerticalAlignment="Center" Opacity="0.75"/>
+                      <Button Grid.Column="3"
+                              Command="{Binding $parent[Window].((vm:ImportRmbCoeffDialogViewModel)DataContext).RemoveExpenseCommand}"
+                              CommandParameter="{Binding}"
+                              Background="Transparent" BorderThickness="0" Padding="4"
+                              Width="32" Height="32" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Viewbox Width="14" Height="14">
+                          <Path Fill="{DynamicResource CourseraDangerBrush}"
+                                Data="M6,7 L6,19 C6,20.1 6.9,21 8,21 L16,21 C17.1,21 18,20.1 18,19 L18,7 L6,7 Z M19,4 L15.5,4 L14.5,3 L9.5,3 L8.5,4 L5,4 L5,6 L19,6 Z"/>
+                        </Viewbox>
+                      </Button>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+
+      <Border Padding="12,10" Background="#EEF2FF" BorderBrush="#C7D2FE" BorderThickness="1" CornerRadius="6">
+        <StackPanel Spacing="6">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding LblSumExpenses}" Opacity="0.7"/>
+            <TextBlock Grid.Column="1" Text="{Binding SumExpensesLabel}" FontWeight="SemiBold"/>
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding LblCoefficient}" FontWeight="Bold"/>
+            <TextBlock Grid.Column="1" Text="{Binding CoefficientLabel}" FontWeight="Bold" FontSize="18"
+                       Foreground="#3730A3"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+        <Button Content="{Binding BtnCancel}" Command="{Binding CancelCommand}" MinWidth="90"/>
+        <Button Content="{Binding BtnOk}" Command="{Binding OkCommand}" Classes="primary" MinWidth="90" IsDefault="True"/>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</Window>

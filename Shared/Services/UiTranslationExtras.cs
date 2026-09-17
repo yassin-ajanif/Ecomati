@@ -9,6 +9,7 @@ internal static class UiTranslationExtras
     {
         ["Btn_Back"] = ("Retour", "رجوع"),
         ["Btn_Cancel"] = ("Annuler", "إلغاء"),
+        ["Btn_Ok"] = ("OK", "موافق"),
         ["Btn_Save"] = ("Enregistrer", "حفظ"),
         ["Btn_New"] = ("Nouveau", "جديد"),
         ["Btn_Pdf"] = ("PDF", "PDF"),
@@ -428,9 +429,12 @@ internal static class UiTranslationExtras
         ["ModePaiement_TPE"] = ("TPE", "محطة دفع"),
 
         ["Calc_Help"] = (
-            "Total frais = prix gros + frais. Coefficient = total frais ÷ prix gros. Prix produit = coefficient × prix unitaire RMB.",
-            "إجمالي المصاريف = سعر الجملة + المصاريف. المعامل = إجمالي المصاريف ÷ سعر الجملة. سعر المنتج = المعامل × سعر الوحدة RMB."),
+            "Total frais = prix gros + frais",
+            "إجمالي المصاريف = سعر الجملة + المصاريف"),
         ["Calc_Formula"] = (
+            "Coefficient = total frais ÷ prix gros",
+            "المعامل = إجمالي المصاريف ÷ سعر الجملة"),
+        ["Calc_FormulaProduct"] = (
             "Prix produit = (total frais ÷ prix gros) × RMB",
             "سعر المنتج = (إجمالي المصاريف ÷ سعر الجملة) × RMB"),
         ["Calc_Gros"] = ("Prix gros (total de l'achat)", "سعر الجملة (إجمالي الشراء)"),
@@ -445,6 +449,25 @@ internal static class UiTranslationExtras
         ["Calc_AddedCost"] = ("Coût ajouté", "التكلفة المضافة"),
         ["Calc_ProductPrice"] = ("Prix produit", "سعر المنتج"),
         ["Calc_Margin"] = ("Marge", "الهامش"),
+        ["Calc_TableTitle"] = ("Tableau import", "جدول الاستيراد"),
+        ["Calc_AddRow"] = ("Ajouter une ligne", "إضافة سطر"),
+        ["Calc_ColReference"] = ("REFERENCE", "REFERENCE"),
+        ["Calc_ColPm"] = ("P/M", "P/M"),
+        ["Calc_ColPc"] = ("P/C", "P/C"),
+        ["Calc_ColRmb"] = ("RMB", "RMB"),
+        ["Calc_ColLaDouane"] = ("PAF", "PAF"),
+        ["Calc_ColM"] = ("M", "M"),
+        ["Calc_ColCntPs"] = ("CNT PS", "CNT PS"),
+        ["Calc_ColTm"] = ("T M", "T M"),
+        ["Calc_ColCntColis"] = ("CNT COLIS", "CNT COLIS"),
+        ["Calc_ColMNet"] = ("M/NET", "M/NET"),
+        ["Calc_ColCa"] = ("CA", "CA"),
+        ["Calc_ColTMarge"] = ("T/M", "T/M"),
+        ["Calc_RmbDialogTitle"] = ("Calculer le coefficient RMB", "حساب معامل RMB"),
+        ["Calc_RmbDialogFormula"] = (
+            "RMB = (prix gros + frais) ÷ prix gros",
+            "RMB = (سعر الجملة + المصاريف) ÷ سعر الجملة"),
+        ["Calc_CalcRmb"] = ("Calculer RMB", "حساب RMB"),
     };
 
     internal static bool TryGet(string key, out (string Fr, string Ar) pair) => Map.TryGetValue(key, out pair);
