@@ -9,9 +9,9 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>GestionCommerciale</RootNamespace>
     <ApplicationIcon>Assets\Ecomati.ico</ApplicationIcon>
-    <Version>1.0.7</Version>
-    <AssemblyVersion>1.0.7.0</AssemblyVersion>
-    <FileVersion>1.0.7.0</FileVersion>
+    <Version>1.0.8</Version>
+    <AssemblyVersion>1.0.8.0</AssemblyVersion>
+    <FileVersion>1.0.8.0</FileVersion>
     <Product>Ecomati</Product>
     <AssemblyTitle>Ecomati</AssemblyTitle>
   </PropertyGroup>
@@ -42,6 +42,10 @@
   <!-- dotnet watch: rebuild when Avalonia views change (not only .cs) -->
   <ItemGroup>
     <Watch Include="**\*.axaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
   <ItemGroup>
