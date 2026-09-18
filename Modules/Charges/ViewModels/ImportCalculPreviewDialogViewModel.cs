@@ -180,7 +180,7 @@ public partial class ImportCalculPreviewDialogViewModel : ObservableObject
                 PeriodLabel = Subtitle,
                 Columns =
                 [
-                    new(ColDesignation, 4.5f),
+                    new(ColDesignation, 2.2f),
                     new(ColPm, 0.7f, right),
                     new(ColPc, 0.7f, right),
                     new(ColRmb, 0.7f, right),

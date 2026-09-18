@@ -26,7 +26,6 @@ public partial class ImportCostTableRow : ObservableObject, IDisposable
     [ObservableProperty] private Bitmap? _productImage;
     [ObservableProperty] private bool _hasProductImage;
     public byte[]? ProductImageData { get; private set; }
-    public double ImageBandHeight => HasProductImage ? 180 : 0;
     public int NumericRow => HasProductImage ? 0 : 1;
     [ObservableProperty] private ImportProductPick? _selectedProduct;
 
@@ -62,11 +61,8 @@ public partial class ImportCostTableRow : ObservableObject, IDisposable
         ApplyProduct(value.Id, value.Designation, value.ImageData);
     }
 
-    partial void OnHasProductImageChanged(bool value)
-    {
-        OnPropertyChanged(nameof(ImageBandHeight));
+    partial void OnHasProductImageChanged(bool value) =>
         OnPropertyChanged(nameof(NumericRow));
-    }
 
     partial void OnDesignationChanged(string value)
     {

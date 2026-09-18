@@ -152,7 +152,7 @@
           <Grid RowDefinitions="Auto,*,Auto" HorizontalAlignment="Stretch" FlowDirection="LeftToRight">
           <Border Grid.Row="0" Background="{DynamicResource CourseraSurfaceMutedBrush}" Padding="8,8"
                   CornerRadius="8,8,0,0">
-            <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28">
+            <Grid ColumnDefinitions="1.6*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28">
               <TextBlock Grid.Column="0" Text="{Binding ColReference}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center"/>
               <TextBlock Grid.Column="1" Text="{Binding ColPm}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
               <TextBlock Grid.Column="2" Text="{Binding ColPc}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
@@ -190,10 +190,10 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate DataType="vm:ImportCostTableRow">
                 <Border Padding="6,4" BorderBrush="#18000000" BorderThickness="0,0,0,1" HorizontalAlignment="Stretch">
-                  <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28"
+                  <Grid ColumnDefinitions="1.6*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28"
                         HorizontalAlignment="Stretch">
                     <Grid.RowDefinitions>
-                      <RowDefinition Height="{Binding ImageBandHeight}"/>
+                      <RowDefinition Height="Auto"/>
                       <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top"
@@ -203,10 +203,10 @@
                         <Border Padding="10" Background="White" CornerRadius="8"
                                 BorderBrush="#CBD5E1" BorderThickness="1"
                                 BoxShadow="0 4 16 0 #33000000" MaxWidth="420">
-                          <Image Source="{Binding ProductImage}" Width="360" Height="360" Stretch="Uniform"/>
-                        </Border>
-                      </ToolTip.Tip>
-                      <Image Source="{Binding ProductImage}" Width="180" Height="180" Stretch="Uniform"/>
+                            <Image Source="{Binding ProductImage}" Width="180" Height="180" Stretch="Uniform"/>
+                          </Border>
+                        </ToolTip.Tip>
+                      <Image Source="{Binding ProductImage}" MaxHeight="90" MaxWidth="90" Stretch="Uniform"/>
                     </Border>
                     <AutoCompleteBox Grid.Row="1" Grid.Column="0"
                                      MinimumPrefixLength="0"
@@ -311,7 +311,7 @@
           </ItemsControl>
           <Border Grid.Row="2" Background="#E0E7FF" Padding="8,8" CornerRadius="0,0,8,8"
                   BorderBrush="#18000000" BorderThickness="0,1,0,0">
-            <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28"
+            <Grid ColumnDefinitions="1.6*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28"
                   MinHeight="34" HorizontalAlignment="Stretch">
               <TextBlock Grid.Column="0" Text="{Binding LblTotal}" FontWeight="Bold" FontSize="12"
                          VerticalAlignment="Center" Margin="0,0,4,0"/>

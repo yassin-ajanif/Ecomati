@@ -786,7 +786,7 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
             PeriodLabel = $"{DateTime.Today:dd/MM/yyyy}  —  {Devise}",
             Columns =
             [
-                new(ColReference, 4.5f),
+                new(ColReference, 2.2f),
                 new(ColPm, 0.7f, right),
                 new(ColPc, 0.7f, right),
                 new(ColRmb, 0.7f, right),

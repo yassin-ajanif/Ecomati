@@ -19,7 +19,6 @@ public sealed class ImportCalculPreviewRow : IDisposable
     public Bitmap? ProductImage { get; private set; }
     public bool HasProductImage { get; private set; }
     public byte[]? ProductImageData { get; private set; }
-    public double ImageBandHeight => HasProductImage ? 180 : 0;
     public int NumericRow => HasProductImage ? 0 : 1;
 
     public static ImportCalculPreviewRow FromLigne(string designation, decimal pm, decimal pc, decimal rmb,

@@ -23,7 +23,7 @@
           <Grid RowDefinitions="Auto,*" MinWidth="1120">
             <Border Grid.Row="0" Background="{DynamicResource CourseraSurfaceMutedBrush}" Padding="8,8"
                     CornerRadius="8,8,0,0">
-              <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*">
+              <Grid ColumnDefinitions="1.6*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*">
                 <TextBlock Grid.Column="0" Text="{Binding ColDesignation}" FontWeight="SemiBold" FontSize="11"/>
                 <TextBlock Grid.Column="1" Text="{Binding ColPm}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
                 <TextBlock Grid.Column="2" Text="{Binding ColPc}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
@@ -57,12 +57,12 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="vm:ImportCalculPreviewRow">
                   <Border Padding="6,4" BorderBrush="#18000000" BorderThickness="0,0,0,1">
-                    <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*">
+                    <Grid ColumnDefinitions="1.6*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*">
                       <Grid.RowDefinitions>
-                        <RowDefinition Height="{Binding ImageBandHeight}"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                       </Grid.RowDefinitions>
-                      <Image Grid.Row="0" Grid.Column="0" Source="{Binding ProductImage}" Width="180" Height="180"
+                      <Image Grid.Row="0" Grid.Column="0" Source="{Binding ProductImage}" MaxHeight="90" MaxWidth="90"
                              Stretch="Uniform" IsVisible="{Binding HasProductImage}" HorizontalAlignment="Left"
                              VerticalAlignment="Top" Margin="0,0,4,0"/>
                       <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Designation}" TextWrapping="Wrap"
@@ -126,7 +126,7 @@
       </Border>
 
       <Border Grid.Row="2" Margin="0,0,0,12" Background="#E0E7FF" Padding="8,8" CornerRadius="8">
-        <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*">
+        <Grid ColumnDefinitions="1.6*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*">
           <TextBlock Grid.Column="0" Text="{Binding LblTotal}" FontWeight="Bold"/>
           <Border Grid.Column="9" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
             <TextBlock Text="{Binding TotalMNetLabel}" FontWeight="Bold" HorizontalAlignment="Right"

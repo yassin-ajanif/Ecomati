@@ -180,7 +180,7 @@ public static class ReportPdfRenderer
             c.Text(text).Bold().FontSize(8);
     }
 
-    private const float CellImageSize = 180f;
+    private const float CellImageSize = 90f;
 
     private static void BodyCell(
         IContainer cell,
@@ -193,14 +193,11 @@ public static class ReportPdfRenderer
         var c = cell.Border(0.5f).BorderColor(TableBorder).Padding(4);
         if (imageBytes is { Length: > 0 })
         {
-            c.Column(col =>
+            c.AlignLeft().Column(col =>
             {
-                col.Spacing(3);
-                col.Item().Height(CellImageSize).Width(CellImageSize).Image(imageBytes).FitArea();
-                var textItem = col.Item();
-                if (alignRight)
-                    textItem = textItem.AlignRight();
-                var styled = textItem.Text(text).FontSize(isDetail ? 8f : 8.5f).FontColor(textColor);
+                col.Spacing(2);
+                col.Item().MaxHeight(CellImageSize).Image(imageBytes).FitHeight();
+                var styled = col.Item().Text(text).FontSize(isDetail ? 8f : 8.5f).FontColor(textColor);
                 if (!isDetail)
                     styled.SemiBold();
             });
