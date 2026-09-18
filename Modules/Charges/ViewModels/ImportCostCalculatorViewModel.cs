@@ -806,7 +806,8 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
                 new(ColCa, FmtTotal(TotalCa), true),
                 new(ColTMarge, FmtTotal(TotalTMarge), true)
             ],
-            Landscape = true
+            Landscape = true,
+            ForceLeftToRight = true
         };
     }
 

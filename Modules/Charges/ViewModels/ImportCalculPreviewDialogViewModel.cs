@@ -200,7 +200,8 @@ public partial class ImportCalculPreviewDialogViewModel : ObservableObject
                     new(ColCa, FmtTotal(TotalCa), true),
                     new(ColTMarge, FmtTotal(TotalTMarge), true)
                 ],
-                Landscape = true
+                Landscape = true,
+                ForceLeftToRight = true
             };
 
             var bytes = await _pdf.BuildReportPdfAsync(model, cancellationToken);

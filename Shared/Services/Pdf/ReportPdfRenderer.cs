@@ -25,11 +25,15 @@ public static class ReportPdfRenderer
         var rtl = model.IsRightToLeft;
         var columns = rtl ? model.Columns.Reverse().ToList() : model.Columns.ToList();
         var rows = rtl
-            ? model.Rows.Select(r => new ReportPdfRow
+            ? model.Rows.Select(r =>
             {
-                Cells = r.Cells.Reverse().ToList(),
-                CellImages = r.CellImages?.Reverse().ToList(),
-                IsDetail = r.IsDetail
+                var cells = r.Cells.ToList();
+                return new ReportPdfRow
+                {
+                    Cells = cells.AsEnumerable().Reverse().ToList(),
+                    CellImages = PadCellImages(cells, r.CellImages)?.AsEnumerable().Reverse().ToList(),
+                    IsDetail = r.IsDetail
+                };
             }).ToList()
             : model.Rows.ToList();
 
@@ -182,6 +186,23 @@ public static class ReportPdfRenderer
 
     private const float CellImageSize = 90f;
 
+    /// <summary>Align sparse cell images with cell indices before column reversal (RTL).</summary>
+    private static IReadOnlyList<byte[]?>? PadCellImages(
+        IReadOnlyList<string> cells,
+        IReadOnlyList<byte[]?>? images)
+    {
+        if (images is null || images.Count == 0)
+            return null;
+
+        var padded = new byte[]?[cells.Count];
+        for (var i = 0; i < cells.Count; i++)
+        {
+            if (i < images.Count)
+                padded[i] = images[i];
+        }
+        return padded;
+    }
+
     private static void BodyCell(
         IContainer cell,
         string text,
@@ -196,7 +217,7 @@ public static class ReportPdfRenderer
             c.AlignLeft().Column(col =>
             {
                 col.Spacing(2);
-                col.Item().MaxHeight(CellImageSize).Image(imageBytes).FitHeight();
+                col.Item().Height(CellImageSize).Image(imageBytes).FitArea();
                 var styled = col.Item().Text(text).FontSize(isDetail ? 8f : 8.5f).FontColor(textColor);
                 if (!isDetail)
                     styled.SemiBold();

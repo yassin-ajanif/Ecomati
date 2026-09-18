@@ -348,7 +348,7 @@ public sealed class PdfService : IPdfService
             Rows = model.Rows,
             SummaryLines = model.SummaryLines,
             Landscape = model.Landscape,
-            IsRightToLeft = rtl
+            IsRightToLeft = rtl && !model.ForceLeftToRight
         };
         return await Task.Run(
             () => ReportPdfRenderer.Render(cfg.SocieteNom, effective, TryLoadLogoBytes(cfg.SocieteLogoPath)),

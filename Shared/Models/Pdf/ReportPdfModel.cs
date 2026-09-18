@@ -18,4 +18,6 @@ public sealed class ReportPdfModel
     public IReadOnlyList<PdfKeyValueLine> SummaryLines { get; init; } = [];
     public bool Landscape { get; init; }
     public bool IsRightToLeft { get; init; }
+    /// <summary>Keep LTR layout even when UI language is Arabic (e.g. import calculator table).</summary>
+    public bool ForceLeftToRight { get; init; }
 }
