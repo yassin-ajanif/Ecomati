@@ -40,7 +40,7 @@ public partial class ImportRmbCoeffDialogViewModel : ObservableObject
     [ObservableProperty] private decimal _grosPrice;
     [ObservableProperty] private decimal _sumExpenses;
     [ObservableProperty] private decimal _coefficient;
-    [ObservableProperty] private string _devise = "MAD";
+    [ObservableProperty] private string _devise = "dh";
     [ObservableProperty] private string _title = string.Empty;
     [ObservableProperty] private string _lblFormula = string.Empty;
     [ObservableProperty] private string _lblGros = string.Empty;

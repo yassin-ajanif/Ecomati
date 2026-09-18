@@ -63,7 +63,7 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
     [ObservableProperty] private decimal _grosPrice;
     [ObservableProperty] private decimal _unitPriceRmb;
     [ObservableProperty] private decimal? _marketPrice;
-    [ObservableProperty] private string _devise = "MAD";
+    [ObservableProperty] private string _devise = "dh";
     public string RmbCurrency => "RMB";
 
     [ObservableProperty] private decimal _sumExpenses;
@@ -114,23 +114,30 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
     [ObservableProperty] private string _btnPdf = string.Empty;
     [ObservableProperty] private string _btnSave = string.Empty;
     [ObservableProperty] private string _btnLoad = string.Empty;
-    [ObservableProperty] private string _btnNew = string.Empty;
     [ObservableProperty] private int? _importCalculId;
     [ObservableProperty] private string _libelle = string.Empty;
     [ObservableProperty] private decimal _totalMNet;
     [ObservableProperty] private decimal _totalCa;
     [ObservableProperty] private decimal _totalTMarge;
+    [ObservableProperty] private string _totalMNetLabel = string.Empty;
+    [ObservableProperty] private string _totalCaLabel = string.Empty;
+    [ObservableProperty] private string _totalTMargeLabel = string.Empty;
 
     partial void OnGrosPriceChanged(decimal value) => Recalc();
     partial void OnUnitPriceRmbChanged(decimal value) => Recalc();
     partial void OnMarketPriceChanged(decimal? value) => Recalc();
-    partial void OnDeviseChanged(string value) => UpdateResultLabels();
+    partial void OnDeviseChanged(string value)
+    {
+        UpdateResultLabels();
+        UpdateTotalLabels();
+    }
 
     private async Task LoadDeviseAsync()
     {
         var cfg = await _settings.GetAsync();
         var fromSettings = CurrencyHelper.FromSettings(cfg);
-        Devise = string.IsNullOrWhiteSpace(fromSettings) ? "MAD" : fromSettings;
+        Devise = CurrencyHelper.NormalizeImportDevise(
+            string.IsNullOrWhiteSpace(fromSettings) ? "dh" : fromSettings);
     }
 
     private async Task LoadProductsAsync()
@@ -193,7 +200,6 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
         BtnPdf = _locale.T("Btn_Pdf");
         BtnSave = _locale.T("Btn_Save");
         BtnLoad = _locale.T("Calc_Load");
-        BtnNew = _locale.T("Calc_New");
         UpdateTitleLabel();
         UpdateResultLabels();
     }
@@ -250,6 +256,14 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
         TotalMNet = TableRows.Sum(r => r.MNet ?? 0);
         TotalCa = TableRows.Sum(r => r.Ca ?? 0);
         TotalTMarge = TableRows.Sum(r => r.TMarge ?? 0);
+        UpdateTotalLabels();
+    }
+
+    private void UpdateTotalLabels()
+    {
+        TotalMNetLabel = CurrencyHelper.Format(TotalMNet, Devise);
+        TotalCaLabel = CurrencyHelper.Format(TotalCa, Devise);
+        TotalTMargeLabel = CurrencyHelper.Format(TotalTMarge, Devise);
     }
 
     private void ExpensesOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -416,7 +430,7 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
 
             entity.Libelle = libelle;
             entity.Date = DateTime.Today;
-            entity.Devise = Devise;
+            entity.Devise = CurrencyHelper.NormalizeImportDevise(Devise);
             entity.TotalMNet = TotalMNet;
             entity.TotalCa = TotalCa;
             entity.TotalTMarge = TotalTMarge;
@@ -469,12 +483,14 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
             _locale.T("Calc_LoadEmpty"),
             _locale.T("Btn_Cancel"),
             _locale.T("Calc_Load"),
+            _locale.T("Btn_Delete"),
             list,
             id =>
             {
                 pickedId = id;
                 dialog.Close();
-            });
+            },
+            item => DeleteImportCalculAsync(item, cancellationToken));
         dialog.DataContext = pickVm;
         if (owner != null)
             await dialog.ShowDialog(owner);
@@ -484,23 +500,85 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
         if (pickedId is not int id)
             return;
 
-        await LoadImportCalculAsync(id, cancellationToken);
+        await ShowImportCalculPreviewAsync(id, cancellationToken);
     }
 
-    [RelayCommand]
-    private async Task NewImportAsync(CancellationToken cancellationToken)
+    private async Task<bool> DeleteImportCalculAsync(ImportCalculPickItem item, CancellationToken cancellationToken)
     {
-        if (HasUnsavedWork())
+        if (!await _dialog.ConfirmAsync(
+                _locale.T("Calc_LoadTitle"),
+                _locale.Tf("Calc_ConfirmDelete", item.Libelle),
+                cancellationToken))
+            return false;
+
+        try
         {
-            var ok = await _dialog.ConfirmAsync(Title, _locale.T("Calc_NewConfirm"), cancellationToken);
-            if (!ok)
-                return;
+            await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+            var entity = await db.ImportCalculs.FindAsync([item.Id], cancellationToken);
+            if (entity is null)
+            {
+                await _dialog.ShowErrorAsync(_locale.T("Calc_LoadTitle"), _locale.T("Calc_LoadNotFound"), cancellationToken);
+                return false;
+            }
+
+            db.ImportCalculs.Remove(entity);
+            await db.SaveChangesAsync(cancellationToken);
+
+            if (ImportCalculId == item.Id)
+            {
+                ImportCalculId = null;
+                Libelle = string.Empty;
+                UpdateTitleLabel();
+                ClearTable();
+            }
+
+            await _dialog.ShowInfoAsync(_locale.T("Calc_LoadTitle"), _locale.T("Calc_Deleted"), cancellationToken);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Échec de la suppression du calcul import", ex, "ImportCostCalculatorViewModel.DeleteImportCalculAsync");
+            await _dialog.ShowErrorAsync(_locale.T("Calc_LoadTitle"), ex.Message, cancellationToken);
+            return false;
+        }
+    }
+
+    private async Task ShowImportCalculPreviewAsync(int id, CancellationToken cancellationToken)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        var entity = await db.ImportCalculs.AsNoTracking()
+            .Include(x => x.Lignes.OrderBy(l => l.Ordre))
+            .ThenInclude(l => l.Produit)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (entity is null)
+        {
+            await _dialog.ShowErrorAsync(Title, _locale.T("Calc_LoadNotFound"), cancellationToken);
+            return;
         }
 
-        ClearTable();
-        ImportCalculId = null;
-        Libelle = string.Empty;
-        UpdateTitleLabel();
+        var owner = GetOwnerWindow();
+        var previewDialog = new ImportCalculPreviewDialog();
+        var editRequested = false;
+        var previewVm = ImportCalculPreviewDialogViewModel.Create(
+            entity,
+            _locale,
+            _pdf,
+            _dialog,
+            previewDialog.Close,
+            _ =>
+            {
+                editRequested = true;
+            });
+        previewDialog.DataContext = previewVm;
+
+        if (owner != null)
+            await previewDialog.ShowDialog(owner);
+        else
+            previewDialog.Show();
+
+        if (editRequested)
+            await LoadImportCalculAsync(id, cancellationToken);
     }
 
     public async Task LoadImportCalculAsync(int id, CancellationToken cancellationToken = default)
@@ -522,7 +600,7 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
         ClearTable();
         ImportCalculId = entity.Id;
         Libelle = entity.Libelle;
-        Devise = entity.Devise;
+        Devise = CurrencyHelper.NormalizeImportDevise(entity.Devise);
         UpdateTitleLabel();
 
         foreach (var ligne in entity.Lignes.OrderBy(l => l.Ordre))
@@ -606,9 +684,6 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
         && row.CntPs.HasValue
         && row.CntColis.HasValue;
 
-    private bool HasUnsavedWork() =>
-        ImportCalculId is null && GetSavableRows().Count > 0;
-
     private void ClearTable()
     {
         foreach (var row in TableRows.ToList())
@@ -683,7 +758,10 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
                     Fmt(r.MNet),
                     Fmt(r.Ca),
                     Fmt(r.TMarge)
-                ]
+                ],
+                CellImages = r.ProductImageData is { Length: > 0 }
+                    ? new byte[]?[] { r.ProductImageData }
+                    : null
             })
             .ToList();
 
@@ -695,9 +773,9 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
                 [
                     LblTotal,
                     "", "", "", "", "", "", "", "",
-                    TotalMNet.ToString("N2"),
-                    TotalCa.ToString("N2"),
-                    TotalTMarge.ToString("N2")
+                    FmtTotal(TotalMNet),
+                    FmtTotal(TotalCa),
+                    FmtTotal(TotalTMarge)
                 ]
             });
         }
@@ -705,10 +783,10 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
         return new ReportPdfModel
         {
             Title = Title,
-            PeriodLabel = LblTableTitle,
+            PeriodLabel = $"{DateTime.Today:dd/MM/yyyy}  —  {Devise}",
             Columns =
             [
-                new(ColReference, 2.2f),
+                new(ColReference, 4.5f),
                 new(ColPm, 0.7f, right),
                 new(ColPc, 0.7f, right),
                 new(ColRmb, 0.7f, right),
@@ -724,9 +802,9 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
             Rows = rows,
             SummaryLines =
             [
-                new(ColMNet, TotalMNet.ToString("N2"), true),
-                new(ColCa, TotalCa.ToString("N2"), true),
-                new(ColTMarge, TotalTMarge.ToString("N2"), true)
+                new(ColMNet, FmtTotal(TotalMNet), true),
+                new(ColCa, FmtTotal(TotalCa), true),
+                new(ColTMarge, FmtTotal(TotalTMarge), true)
             ],
             Landscape = true
         };
@@ -734,6 +812,7 @@ public partial class ImportCostCalculatorViewModel : BaseViewModel
 
     private static string Fmt(decimal? value) => value?.ToString("N2") ?? "";
     private static string Fmt0(decimal? value) => value?.ToString("N0") ?? "";
+    private string FmtTotal(decimal value) => CurrencyHelper.Format(value, Devise);
 
     private void Recalc()
     {

@@ -13,4 +13,14 @@ public static class CurrencyHelper
 
     public static string FromSettings(AppSettingsRow cfg) =>
         string.IsNullOrWhiteSpace(cfg.Devise) ? string.Empty : cfg.Devise.Trim();
+
+    /// <summary>Moroccan dirham display label for import calculator (never ISO code MAD).</summary>
+    public static string NormalizeImportDevise(string? devise)
+    {
+        if (string.IsNullOrWhiteSpace(devise)
+            || devise.Equals("MAD", StringComparison.OrdinalIgnoreCase)
+            || devise.Equals("DH", StringComparison.OrdinalIgnoreCase))
+            return "dh";
+        return devise.Trim();
+    }
 }

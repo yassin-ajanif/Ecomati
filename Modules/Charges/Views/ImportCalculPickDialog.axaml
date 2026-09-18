@@ -26,11 +26,14 @@
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
-      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-        <Button Content="{Binding BtnCancel}" Command="{Binding CancelCommand}"/>
-        <Button Content="{Binding BtnLoad}" Command="{Binding ConfirmCommand}"
-                IsEnabled="{Binding SelectedItem, Converter={x:Static conv:IsNotNullConverter.Instance}}"/>
-      </StackPanel>
+      <Grid ColumnDefinitions="Auto,*">
+        <Button Grid.Column="0" Content="{Binding BtnDelete}" Command="{Binding DeleteCommand}"
+                HorizontalAlignment="Left" Foreground="{DynamicResource CourseraDangerBrush}"/>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+          <Button Content="{Binding BtnCancel}" Command="{Binding CancelCommand}"/>
+          <Button Content="{Binding BtnLoad}" Command="{Binding ConfirmCommand}" Classes="primary"/>
+        </StackPanel>
+      </Grid>
     </StackPanel>
   </Border>
 </Window>

@@ -28,6 +28,7 @@ public static class ReportPdfRenderer
             ? model.Rows.Select(r => new ReportPdfRow
             {
                 Cells = r.Cells.Reverse().ToList(),
+                CellImages = r.CellImages?.Reverse().ToList(),
                 IsDetail = r.IsDetail
             }).ToList()
             : model.Rows.ToList();
@@ -109,9 +110,13 @@ public static class ReportPdfRenderer
                             for (var c = 0; c < columns.Count; c++)
                             {
                                 var text = c < row.Cells.Count ? row.Cells[c] : string.Empty;
+                                byte[]? image = row.CellImages is not null && c < row.CellImages.Count
+                                    ? row.CellImages[c]
+                                    : null;
                                 BodyCell(
                                     table.Cell().Background(bg),
                                     text,
+                                    image,
                                     CellAlignRight(columns[c].Align, rtl),
                                     textColor,
                                     row.IsDetail);
@@ -175,13 +180,38 @@ public static class ReportPdfRenderer
             c.Text(text).Bold().FontSize(8);
     }
 
-    private static void BodyCell(IContainer cell, string text, bool alignRight, string textColor, bool isDetail)
+    private const float CellImageSize = 180f;
+
+    private static void BodyCell(
+        IContainer cell,
+        string text,
+        byte[]? imageBytes,
+        bool alignRight,
+        string textColor,
+        bool isDetail)
     {
         var c = cell.Border(0.5f).BorderColor(TableBorder).Padding(4);
+        if (imageBytes is { Length: > 0 })
+        {
+            c.Column(col =>
+            {
+                col.Spacing(3);
+                col.Item().Height(CellImageSize).Width(CellImageSize).Image(imageBytes).FitArea();
+                var textItem = col.Item();
+                if (alignRight)
+                    textItem = textItem.AlignRight();
+                var styled = textItem.Text(text).FontSize(isDetail ? 8f : 8.5f).FontColor(textColor);
+                if (!isDetail)
+                    styled.SemiBold();
+            });
+            return;
+        }
+
+        c = c.AlignMiddle();
         if (alignRight)
             c = c.AlignRight();
-        var styled = c.Text(text).FontSize(isDetail ? 8f : 8.5f).FontColor(textColor);
+        var plain = c.Text(text).FontSize(isDetail ? 8f : 8.5f).FontColor(textColor);
         if (!isDetail)
-            styled.SemiBold();
+            plain.SemiBold();
     }
 }

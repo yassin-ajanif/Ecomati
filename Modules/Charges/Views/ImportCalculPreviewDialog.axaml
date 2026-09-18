@@ -1,0 +1,153 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:GestionCommerciale.Modules.Charges.ViewModels"
+        xmlns:conv="using:GestionCommerciale.Shared.Converters"
+        x:Class="GestionCommerciale.Modules.Charges.Views.ImportCalculPreviewDialog"
+        x:DataType="vm:ImportCalculPreviewDialogViewModel"
+        Title="{Binding Title}"
+        Width="1180"
+        MinHeight="420"
+        MaxHeight="900"
+        WindowStartupLocation="CenterOwner"
+        FlowDirection="LeftToRight">
+  <Border Padding="16" FlowDirection="LeftToRight">
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
+      <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,12">
+        <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="Bold"/>
+        <TextBlock Text="{Binding Subtitle}" Opacity="0.75"/>
+      </StackPanel>
+
+      <Border Grid.Row="1" Margin="0,0,0,12" BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1"
+              CornerRadius="8" Background="{DynamicResource CourseraSurfaceBrush}">
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+          <Grid RowDefinitions="Auto,*" MinWidth="1120">
+            <Border Grid.Row="0" Background="{DynamicResource CourseraSurfaceMutedBrush}" Padding="8,8"
+                    CornerRadius="8,8,0,0">
+              <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*">
+                <TextBlock Grid.Column="0" Text="{Binding ColDesignation}" FontWeight="SemiBold" FontSize="11"/>
+                <TextBlock Grid.Column="1" Text="{Binding ColPm}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                <TextBlock Grid.Column="2" Text="{Binding ColPc}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                <Border Grid.Column="3" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+                  <TextBlock Text="{Binding ColRmb}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                </Border>
+                <Border Grid.Column="4" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+                  <TextBlock Text="{Binding ColLaDouane}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                </Border>
+                <Border Grid.Column="5" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+                  <TextBlock Text="{Binding ColM}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Column="6" Text="{Binding ColCntPs}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                <Border Grid.Column="7" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+                  <TextBlock Text="{Binding ColTm}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                </Border>
+                <TextBlock Grid.Column="8" Text="{Binding ColCntColis}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                <Border Grid.Column="9" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+                  <TextBlock Text="{Binding ColMNet}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                </Border>
+                <Border Grid.Column="10" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+                  <TextBlock Text="{Binding ColCa}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                </Border>
+                <Border Grid.Column="11" Background="#EEF2FF" CornerRadius="4" Padding="2,2" Margin="0,0,4,0">
+                  <TextBlock Text="{Binding ColTMarge}" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                </Border>
+              </Grid>
+            </Border>
+
+            <ItemsControl Grid.Row="1" ItemsSource="{Binding Rows}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:ImportCalculPreviewRow">
+                  <Border Padding="6,4" BorderBrush="#18000000" BorderThickness="0,0,0,1">
+                    <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*">
+                      <Grid.RowDefinitions>
+                        <RowDefinition Height="{Binding ImageBandHeight}"/>
+                        <RowDefinition Height="Auto"/>
+                      </Grid.RowDefinitions>
+                      <Image Grid.Row="0" Grid.Column="0" Source="{Binding ProductImage}" Width="180" Height="180"
+                             Stretch="Uniform" IsVisible="{Binding HasProductImage}" HorizontalAlignment="Left"
+                             VerticalAlignment="Top" Margin="0,0,4,0"/>
+                      <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Designation}" TextWrapping="Wrap"
+                                 Margin="0,6,4,0"/>
+                      <TextBlock Grid.Row="{Binding NumericRow}" Grid.Column="1" Text="{Binding Pm, StringFormat={}{0:N2}}"
+                                 HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                      <TextBlock Grid.Row="{Binding NumericRow}" Grid.Column="2" Text="{Binding Pc, StringFormat={}{0:N2}}"
+                                 HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                      <Border Grid.Row="{Binding NumericRow}" Grid.Column="3" Background="#EEF2FF" CornerRadius="4"
+                              Padding="6,4" Margin="0,0,3,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Rmb, StringFormat={}{0:N2}}" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"/>
+                      </Border>
+                      <Border Grid.Row="{Binding NumericRow}" Grid.Column="4" Background="#EEF2FF" CornerRadius="4"
+                              Padding="6,4" Margin="0,0,3,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding LaDouane, StringFormat={}{0:N2}}" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Foreground="{Binding LaDouane, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                      </Border>
+                      <Border Grid.Row="{Binding NumericRow}" Grid.Column="5" Background="#EEF2FF" CornerRadius="4"
+                              Padding="6,4" Margin="0,0,3,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding M, StringFormat={}{0:N2}}" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Foreground="{Binding M, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                      </Border>
+                      <TextBlock Grid.Row="{Binding NumericRow}" Grid.Column="6" Text="{Binding CntPs, StringFormat={}{0:N0}}"
+                                 HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                      <Border Grid.Row="{Binding NumericRow}" Grid.Column="7" Background="#EEF2FF" CornerRadius="4"
+                              Padding="6,4" Margin="0,0,3,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Tm, StringFormat={}{0:N2}}" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Foreground="{Binding Tm, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                      </Border>
+                      <TextBlock Grid.Row="{Binding NumericRow}" Grid.Column="8" Text="{Binding CntColis, StringFormat={}{0:N0}}"
+                                 HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                      <Border Grid.Row="{Binding NumericRow}" Grid.Column="9" Background="#EEF2FF" CornerRadius="4"
+                              Padding="6,4" Margin="0,0,2,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding MNet, StringFormat={}{0:N2}}" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Foreground="{Binding MNet, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                      </Border>
+                      <Border Grid.Row="{Binding NumericRow}" Grid.Column="10" Background="#EEF2FF" CornerRadius="4"
+                              Padding="6,4" Margin="0,0,2,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Ca, StringFormat={}{0:N2}}" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Foreground="{Binding Ca, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                      </Border>
+                      <Border Grid.Row="{Binding NumericRow}" Grid.Column="11" Background="#EEF2FF" CornerRadius="4"
+                              Padding="6,4" Margin="0,0,2,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding TMarge, StringFormat={}{0:N2}}" HorizontalAlignment="Right"
+                                   VerticalAlignment="Center"
+                                   Foreground="{Binding TMarge, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                      </Border>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Grid>
+        </ScrollViewer>
+      </Border>
+
+      <Border Grid.Row="2" Margin="0,0,0,12" Background="#E0E7FF" Padding="8,8" CornerRadius="8">
+        <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*">
+          <TextBlock Grid.Column="0" Text="{Binding LblTotal}" FontWeight="Bold"/>
+          <Border Grid.Column="9" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
+            <TextBlock Text="{Binding TotalMNetLabel}" FontWeight="Bold" HorizontalAlignment="Right"
+                       Foreground="{Binding TotalMNet, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+          </Border>
+          <Border Grid.Column="10" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
+            <TextBlock Text="{Binding TotalCaLabel}" FontWeight="Bold" HorizontalAlignment="Right"
+                       Foreground="{Binding TotalCa, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+          </Border>
+          <Border Grid.Column="11" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
+            <TextBlock Text="{Binding TotalTMargeLabel}" FontWeight="Bold" HorizontalAlignment="Right"
+                       Foreground="{Binding TotalTMarge, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+          </Border>
+        </Grid>
+      </Border>
+
+      <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+        <Button Content="{Binding BtnPdf}" Command="{Binding ExportPdfCommand}" MinWidth="70" Padding="10,4"/>
+        <Button Content="{Binding BtnEdit}" Command="{Binding EditCommand}" Classes="primary" MinWidth="90" Padding="10,4"/>
+        <Button Content="{Binding BtnClose}" Command="{Binding CloseCommand}"/>
+      </StackPanel>
+    </Grid>
+  </Border>
+</Window>

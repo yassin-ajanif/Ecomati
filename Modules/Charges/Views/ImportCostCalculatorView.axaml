@@ -132,16 +132,19 @@
       </Grid>
       -->
 
-      <StackPanel Spacing="12" FlowDirection="LeftToRight">
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <TextBlock Text="{Binding LblTableTitle}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-          <Button Content="{Binding BtnAddRow}" Command="{Binding AddTableRowCommand}"/>
-          <Button Content="{Binding BtnAddAllProducts}" Command="{Binding AddAllProductsCommand}"/>
-          <Button Content="{Binding BtnSave}" Command="{Binding SaveCommand}" MinWidth="70" Padding="10,4"/>
-          <Button Content="{Binding BtnLoad}" Command="{Binding LoadSavedCommand}" MinWidth="70" Padding="10,4"/>
-          <Button Content="{Binding BtnNew}" Command="{Binding NewImportCommand}" MinWidth="70" Padding="10,4"/>
-          <Button Content="{Binding BtnPdf}" Command="{Binding ExportPdfCommand}" MinWidth="70" Padding="10,4"/>
-        </StackPanel>
+      <StackPanel Spacing="12" FlowDirection="LeftToRight" HorizontalAlignment="Stretch">
+        <Grid ColumnDefinitions="*,Auto" HorizontalAlignment="Stretch">
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="{Binding LblTableTitle}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <Button Content="{Binding BtnAddRow}" Command="{Binding AddTableRowCommand}"/>
+            <Button Content="{Binding BtnAddAllProducts}" Command="{Binding AddAllProductsCommand}"/>
+            <Button Content="{Binding BtnSave}" Command="{Binding SaveCommand}" MinWidth="70" Padding="10,4"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="{Binding BtnLoad}" Command="{Binding LoadSavedCommand}" MinWidth="70" Padding="10,4"/>
+            <Button Content="{Binding BtnPdf}" Command="{Binding ExportPdfCommand}" MinWidth="70" Padding="10,4"/>
+          </StackPanel>
+        </Grid>
 
         <Border BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="8"
                 Background="{DynamicResource CourseraSurfaceBrush}" HorizontalAlignment="Stretch"
@@ -149,7 +152,7 @@
           <Grid RowDefinitions="Auto,*,Auto" HorizontalAlignment="Stretch" FlowDirection="LeftToRight">
           <Border Grid.Row="0" Background="{DynamicResource CourseraSurfaceMutedBrush}" Padding="8,8"
                   CornerRadius="8,8,0,0">
-            <Grid ColumnDefinitions="1.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28">
+            <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28">
               <TextBlock Grid.Column="0" Text="{Binding ColReference}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center"/>
               <TextBlock Grid.Column="1" Text="{Binding ColPm}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
               <TextBlock Grid.Column="2" Text="{Binding ColPc}" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Center"/>
@@ -187,60 +190,54 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate DataType="vm:ImportCostTableRow">
                 <Border Padding="6,4" BorderBrush="#18000000" BorderThickness="0,0,0,1" HorizontalAlignment="Stretch">
-                  <Grid MinHeight="34" ColumnDefinitions="1.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28" HorizontalAlignment="Stretch">
-                    <Grid Grid.Column="0" ColumnDefinitions="*,28" Margin="0,0,4,0">
-                      <AutoCompleteBox MinimumPrefixLength="0"
-                                       MaxDropDownHeight="280"
-                                       Watermark="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).WmProduct}"
-                                       ItemsSource="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).ProductCatalog}"
-                                       ItemFilter="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).ProductItemFilter}"
-                                       Text="{Binding Designation, Mode=TwoWay}"
-                                       SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
-                                       HorizontalAlignment="Stretch">
-                        <AutoCompleteBox.ValueMemberBinding>
-                          <Binding Path="Designation"/>
-                        </AutoCompleteBox.ValueMemberBinding>
-                        <AutoCompleteBox.ItemTemplate>
-                          <DataTemplate DataType="vm:ImportProductPick">
-                            <TextBlock Text="{Binding Designation}" TextTrimming="CharacterEllipsis"/>
-                          </DataTemplate>
-                        </AutoCompleteBox.ItemTemplate>
-                      </AutoCompleteBox>
-                      <Border Grid.Column="1" Width="24" Height="24" Margin="2,0,0,0"
-                              VerticalAlignment="Center" HorizontalAlignment="Center"
-                              Cursor="Hand" Background="Transparent"
-                              ToolTip.ShowDelay="200">
-                        <ToolTip.Tip>
-                          <Border Padding="10" Background="White" CornerRadius="8"
-                                  BorderBrush="#CBD5E1" BorderThickness="1"
-                                  BoxShadow="0 4 16 0 #33000000" MaxWidth="420">
-                            <Panel>
-                              <Image Source="{Binding ProductImage}"
-                                     Width="360" Height="360" Stretch="Uniform"
-                                     IsVisible="{Binding HasProductImage}"/>
-                              <TextBlock Text="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).MsgNoProduct}"
-                                         IsVisible="{Binding !IsExistingProduct}"
-                                         FontSize="14" FontWeight="SemiBold"
-                                         Foreground="#64748B" TextWrapping="Wrap"
-                                         HorizontalAlignment="Center" VerticalAlignment="Center"
-                                         Margin="12"/>
-                            </Panel>
-                          </Border>
-                        </ToolTip.Tip>
-                        <Viewbox Width="16" Height="16">
-                          <Path Fill="#3730A3"
-                                Data="M4,4 L16,4 C17.1,4 18,4.9 18,6 L18,14 C18,15.1 17.1,16 16,16 L4,16 C2.9,16 2,15.1 2,14 L2,6 C2,4.9 2.9,4 4,4 Z M4,6 L4,14 L16,14 L16,6 Z M7,9 A1.5,1.5 0 1 0 7,6 A1.5,1.5 0 1 0 7,9 Z M5,13 L8,10 L10,12 L13,8 L15,13 Z"/>
-                        </Viewbox>
-                      </Border>
-                    </Grid>
-                    <NumericUpDown Grid.Column="1" ShowButtonSpinner="False" Value="{Binding Pm}" FormatString="N2"
-                                   Minimum="0" Increment="0.01" Margin="0,0,3,0" HorizontalAlignment="Stretch"/>
-                    <NumericUpDown Grid.Column="2" ShowButtonSpinner="False" Value="{Binding Pc}" FormatString="N2"
-                                   Minimum="0" Increment="0.01" Margin="0,0,3,0" HorizontalAlignment="Stretch"/>
-                    <Grid Grid.Column="3" ColumnDefinitions="*,Auto" Margin="0,0,3,0">
+                  <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28"
+                        HorizontalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="{Binding ImageBandHeight}"/>
+                      <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Border Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                            IsVisible="{Binding HasProductImage}" Cursor="Hand" Margin="0,0,4,0"
+                            ToolTip.ShowDelay="200">
+                      <ToolTip.Tip>
+                        <Border Padding="10" Background="White" CornerRadius="8"
+                                BorderBrush="#CBD5E1" BorderThickness="1"
+                                BoxShadow="0 4 16 0 #33000000" MaxWidth="420">
+                          <Image Source="{Binding ProductImage}" Width="360" Height="360" Stretch="Uniform"/>
+                        </Border>
+                      </ToolTip.Tip>
+                      <Image Source="{Binding ProductImage}" Width="180" Height="180" Stretch="Uniform"/>
+                    </Border>
+                    <AutoCompleteBox Grid.Row="1" Grid.Column="0"
+                                     MinimumPrefixLength="0"
+                                     MaxDropDownHeight="280"
+                                     Margin="0,6,4,0"
+                                     Watermark="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).WmProduct}"
+                                     ItemsSource="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).ProductCatalog}"
+                                     ItemFilter="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).ProductItemFilter}"
+                                     Text="{Binding Designation, Mode=TwoWay}"
+                                     SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                                     HorizontalAlignment="Stretch">
+                      <AutoCompleteBox.ValueMemberBinding>
+                        <Binding Path="Designation"/>
+                      </AutoCompleteBox.ValueMemberBinding>
+                      <AutoCompleteBox.ItemTemplate>
+                        <DataTemplate DataType="vm:ImportProductPick">
+                          <TextBlock Text="{Binding Designation}" TextTrimming="CharacterEllipsis"/>
+                        </DataTemplate>
+                      </AutoCompleteBox.ItemTemplate>
+                    </AutoCompleteBox>
+                    <NumericUpDown Grid.Row="{Binding NumericRow}" Grid.Column="1" ShowButtonSpinner="False" Value="{Binding Pm}" FormatString="N2"
+                                   Minimum="0" Increment="0.01" Margin="0,0,3,0" HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Center"/>
+                    <NumericUpDown Grid.Row="{Binding NumericRow}" Grid.Column="2" ShowButtonSpinner="False" Value="{Binding Pc}" FormatString="N2"
+                                   Minimum="0" Increment="0.01" Margin="0,0,3,0" HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Center"/>
+                    <Grid Grid.Row="{Binding NumericRow}" Grid.Column="3" ColumnDefinitions="*,Auto" Margin="0,0,3,0"
+                          VerticalAlignment="Center">
                       <NumericUpDown ShowButtonSpinner="False" Value="{Binding Rmb}" FormatString="N2"
                                      Minimum="0" Increment="0.01" HorizontalAlignment="Stretch"
-                                     Background="#EEF2FF"/>
+                                     Background="#EEF2FF" VerticalAlignment="Center"/>
                       <Button Grid.Column="1"
                               ToolTip.Tip="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).TipCalcRmb}"
                               Command="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).CalculateRmbCommand}"
@@ -253,47 +250,49 @@
                         </Viewbox>
                       </Button>
                     </Grid>
-                    <Border Grid.Column="4" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,3,0"
-                            MinHeight="34" VerticalAlignment="Stretch">
+                    <Border Grid.Row="{Binding NumericRow}" Grid.Column="4" Background="#EEF2FF" CornerRadius="6"
+                            Padding="6,4" Margin="0,0,3,0" VerticalAlignment="Center">
                       <TextBlock Text="{Binding LaDouane, StringFormat={}{0:N2}}"
                                  VerticalAlignment="Center" HorizontalAlignment="Right"
                                  Foreground="{Binding LaDouane, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
                     </Border>
-                    <Border Grid.Column="5" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,3,0"
-                            MinHeight="34" VerticalAlignment="Stretch">
+                    <Border Grid.Row="{Binding NumericRow}" Grid.Column="5" Background="#EEF2FF" CornerRadius="6"
+                            Padding="6,4" Margin="0,0,3,0" VerticalAlignment="Center">
                       <TextBlock Text="{Binding M, StringFormat={}{0:N2}}"
                                  VerticalAlignment="Center" HorizontalAlignment="Right"
                                  Foreground="{Binding M, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
                     </Border>
-                    <NumericUpDown Grid.Column="6" ShowButtonSpinner="False" Value="{Binding CntPs}" FormatString="N0"
-                                   Minimum="0" Increment="1" Margin="0,0,3,0" HorizontalAlignment="Stretch"/>
-                    <Border Grid.Column="7" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,3,0"
-                            MinHeight="34" VerticalAlignment="Stretch">
+                    <NumericUpDown Grid.Row="{Binding NumericRow}" Grid.Column="6" ShowButtonSpinner="False" Value="{Binding CntPs}" FormatString="N0"
+                                   Minimum="0" Increment="1" Margin="0,0,3,0" HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Center"/>
+                    <Border Grid.Row="{Binding NumericRow}" Grid.Column="7" Background="#EEF2FF" CornerRadius="6"
+                            Padding="6,4" Margin="0,0,3,0" VerticalAlignment="Center">
                       <TextBlock Text="{Binding Tm, StringFormat={}{0:N2}}"
                                  VerticalAlignment="Center" HorizontalAlignment="Right"
                                  Foreground="{Binding Tm, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
                     </Border>
-                    <NumericUpDown Grid.Column="8" ShowButtonSpinner="False" Value="{Binding CntColis}" FormatString="N0"
-                                   Minimum="0" Increment="1" Margin="0,0,3,0" HorizontalAlignment="Stretch"/>
-                    <Border Grid.Column="9" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,2,0"
-                            MinHeight="34" VerticalAlignment="Stretch">
+                    <NumericUpDown Grid.Row="{Binding NumericRow}" Grid.Column="8" ShowButtonSpinner="False" Value="{Binding CntColis}" FormatString="N0"
+                                   Minimum="0" Increment="1" Margin="0,0,3,0" HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Center"/>
+                    <Border Grid.Row="{Binding NumericRow}" Grid.Column="9" Background="#EEF2FF" CornerRadius="6"
+                            Padding="6,4" Margin="0,0,2,0" VerticalAlignment="Center">
                       <TextBlock Text="{Binding MNet, StringFormat={}{0:N2}}"
                                  VerticalAlignment="Center" HorizontalAlignment="Right"
                                  Foreground="{Binding MNet, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
                     </Border>
-                    <Border Grid.Column="10" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,2,0"
-                            MinHeight="34" VerticalAlignment="Stretch">
+                    <Border Grid.Row="{Binding NumericRow}" Grid.Column="10" Background="#EEF2FF" CornerRadius="6"
+                            Padding="6,4" Margin="0,0,2,0" VerticalAlignment="Center">
                       <TextBlock Text="{Binding Ca, StringFormat={}{0:N2}}"
                                  VerticalAlignment="Center" HorizontalAlignment="Right"
                                  Foreground="{Binding Ca, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
                     </Border>
-                    <Border Grid.Column="11" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,2,0"
-                            MinHeight="34" VerticalAlignment="Stretch">
+                    <Border Grid.Row="{Binding NumericRow}" Grid.Column="11" Background="#EEF2FF" CornerRadius="6"
+                            Padding="6,4" Margin="0,0,2,0" VerticalAlignment="Center">
                       <TextBlock Text="{Binding TMarge, StringFormat={}{0:N2}}"
                                  VerticalAlignment="Center" HorizontalAlignment="Right"
                                  Foreground="{Binding TMarge, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
                     </Border>
-                    <Button Grid.Column="12"
+                    <Button Grid.Row="{Binding NumericRow}" Grid.Column="12"
                             ToolTip.Tip="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).BtnRemove}"
                             Command="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).RemoveTableRowCommand}"
                             CommandParameter="{Binding}"
@@ -312,22 +311,22 @@
           </ItemsControl>
           <Border Grid.Row="2" Background="#E0E7FF" Padding="8,8" CornerRadius="0,0,8,8"
                   BorderBrush="#18000000" BorderThickness="0,1,0,0">
-            <Grid ColumnDefinitions="1.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28"
+            <Grid ColumnDefinitions="2.8*,0.7*,0.7*,0.95*,0.9*,0.75*,0.65*,0.9*,0.7*,1.35*,1.35*,1.35*,28"
                   MinHeight="34" HorizontalAlignment="Stretch">
               <TextBlock Grid.Column="0" Text="{Binding LblTotal}" FontWeight="Bold" FontSize="12"
                          VerticalAlignment="Center" Margin="0,0,4,0"/>
               <Border Grid.Column="9" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
-                <TextBlock Text="{Binding TotalMNet, StringFormat={}{0:N2}}" FontWeight="Bold" FontSize="12"
+                <TextBlock Text="{Binding TotalMNetLabel}" FontWeight="Bold" FontSize="12"
                            VerticalAlignment="Center" HorizontalAlignment="Right"
                            Foreground="{Binding TotalMNet, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
               </Border>
               <Border Grid.Column="10" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
-                <TextBlock Text="{Binding TotalCa, StringFormat={}{0:N2}}" FontWeight="Bold" FontSize="12"
+                <TextBlock Text="{Binding TotalCaLabel}" FontWeight="Bold" FontSize="12"
                            VerticalAlignment="Center" HorizontalAlignment="Right"
                            Foreground="{Binding TotalCa, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
               </Border>
               <Border Grid.Column="11" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
-                <TextBlock Text="{Binding TotalTMarge, StringFormat={}{0:N2}}" FontWeight="Bold" FontSize="12"
+                <TextBlock Text="{Binding TotalTMargeLabel}" FontWeight="Bold" FontSize="12"
                            VerticalAlignment="Center" HorizontalAlignment="Right"
                            Foreground="{Binding TotalTMarge, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
               </Border>

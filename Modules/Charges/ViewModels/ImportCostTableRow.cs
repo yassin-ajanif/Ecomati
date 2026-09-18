@@ -25,6 +25,9 @@ public partial class ImportCostTableRow : ObservableObject, IDisposable
     [ObservableProperty] private bool _isExistingProduct;
     [ObservableProperty] private Bitmap? _productImage;
     [ObservableProperty] private bool _hasProductImage;
+    public byte[]? ProductImageData { get; private set; }
+    public double ImageBandHeight => HasProductImage ? 180 : 0;
+    public int NumericRow => HasProductImage ? 0 : 1;
     [ObservableProperty] private ImportProductPick? _selectedProduct;
 
     private bool _applyingProduct;
@@ -57,6 +60,12 @@ public partial class ImportCostTableRow : ObservableObject, IDisposable
         if (value is null)
             return;
         ApplyProduct(value.Id, value.Designation, value.ImageData);
+    }
+
+    partial void OnHasProductImageChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ImageBandHeight));
+        OnPropertyChanged(nameof(NumericRow));
     }
 
     partial void OnDesignationChanged(string value)
@@ -100,8 +109,10 @@ public partial class ImportCostTableRow : ObservableObject, IDisposable
         ProductImage?.Dispose();
         ProductImage = null;
         HasProductImage = false;
+        ProductImageData = null;
         if (bytes is null || bytes.Length == 0)
             return;
+        ProductImageData = bytes;
         try
         {
             using var ms = new MemoryStream(bytes);
