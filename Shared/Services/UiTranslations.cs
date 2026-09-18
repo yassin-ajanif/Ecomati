@@ -90,7 +90,7 @@ public static class UiTranslations
         ["Export_PdfPicker"] = ("Exporter PDF", "تصدير PDF"),
         ["Report_ExportStockCsv"] = ("Export stock CSV", "تصدير مخزون CSV"),
         ["Stock_Title"] = ("Stock", "المخزون"),
-        ["Stock_ErrVariation"] = ("Indiquez une variation de stock.", "أدخل تغييراً في المخزون."),
+        ["Stock_ErrVariation"] = ("Le stock est déjà à cette valeur.", "المخزون مساوٍ بالفعل لهذه القيمة."),
         ["BC_Title"] = ("Bon de commande", "أمر شراء"),
         ["BC_NewTitle"] = ("Nouveau bon de commande", "أمر شراء جديد"),
         ["BC_TitleNum"] = ("Bon de commande {0}", "أمر شراء {0}"),
