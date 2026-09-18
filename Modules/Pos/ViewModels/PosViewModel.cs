@@ -54,7 +54,11 @@ public partial class PosViewModel : BaseViewModel
             OnPropertyChanged(nameof(CartTitle));
             OnPropertyChanged(nameof(TotalLabel));
             OnPropertyChanged(nameof(BtnClearCart));
+            OnPropertyChanged(nameof(BtnRefund));
             OnPropertyChanged(nameof(BtnCheckout));
+            OnPropertyChanged(nameof(BtnAddPaymentSplit));
+            OnPropertyChanged(nameof(LabelMontantRecu));
+            OnPropertyChanged(nameof(LabelResteARendre));
             OnPropertyChanged(nameof(WmClientSearch));
             OnPropertyChanged(nameof(BtnDiscounts));
             OnPropertyChanged(nameof(LabelRemiseGlobale));
@@ -113,14 +117,14 @@ public partial class PosViewModel : BaseViewModel
     public string SearchWatermark => _locale.T("Wm_SearchCatalog");
     public string CatalogTitle => _locale.T("Nav_Pos");
     public string CartTitle => _locale.T("Pos_CartTitle");
-    public string TotalLabel => "Total TTC";
-    public string BtnClearCart => "Vider";
-    public string BtnRefund => "Rembourser";
-    public string BtnCheckout => "Encaisser";
-    public string BtnAddPaymentSplit => "Ajouter mode";
+    public string TotalLabel => _locale.T("Pos_TotalTtc");
+    public string BtnClearCart => _locale.T("Pos_BtnClearCart");
+    public string BtnRefund => _locale.T("Pos_BtnRefund");
+    public string BtnCheckout => _locale.T("Btn_Checkout");
+    public string BtnAddPaymentSplit => _locale.T("Pos_BtnAddPaymentMode");
     public bool CanRemovePaymentSplit => PaymentSplits.Count > 1;
-    public string LabelMontantRecu => "Montant reçu";
-    public string LabelResteARendre => "Reste à rendre";
+    public string LabelMontantRecu => _locale.T("Pos_LabelMontantRecu");
+    public string LabelResteARendre => _locale.T("Pos_LabelResteARendre");
 
     [ObservableProperty] private decimal _montantRecu;
     [ObservableProperty] private decimal _remiseGlobale;
