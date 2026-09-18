@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:GestionCommerciale.Modules.Charges.ViewModels"
+             xmlns:conv="using:GestionCommerciale.Shared.Converters"
              x:Class="GestionCommerciale.Modules.Charges.Views.ImportCostCalculatorView"
              x:Name="ThisView"
              x:DataType="vm:ImportCostCalculatorViewModel">
@@ -136,6 +137,10 @@
           <TextBlock Text="{Binding LblTableTitle}" FontWeight="SemiBold" VerticalAlignment="Center"/>
           <Button Content="{Binding BtnAddRow}" Command="{Binding AddTableRowCommand}"/>
           <Button Content="{Binding BtnAddAllProducts}" Command="{Binding AddAllProductsCommand}"/>
+          <Button Content="{Binding BtnSave}" Command="{Binding SaveCommand}" MinWidth="70" Padding="10,4"/>
+          <Button Content="{Binding BtnLoad}" Command="{Binding LoadSavedCommand}" MinWidth="70" Padding="10,4"/>
+          <Button Content="{Binding BtnNew}" Command="{Binding NewImportCommand}" MinWidth="70" Padding="10,4"/>
+          <Button Content="{Binding BtnPdf}" Command="{Binding ExportPdfCommand}" MinWidth="70" Padding="10,4"/>
         </StackPanel>
 
         <Border BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="8"
@@ -248,28 +253,46 @@
                         </Viewbox>
                       </Button>
                     </Grid>
-                    <NumericUpDown Grid.Column="4" ShowButtonSpinner="False" Value="{Binding LaDouane}" FormatString="N2"
-                                   Minimum="0" Increment="0.01" Margin="0,0,3,0" HorizontalAlignment="Stretch"
-                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
-                    <NumericUpDown Grid.Column="5" ShowButtonSpinner="False" Value="{Binding M}" FormatString="N2"
-                                   Increment="0.01" Margin="0,0,3,0" HorizontalAlignment="Stretch"
-                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
+                    <Border Grid.Column="4" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,3,0"
+                            MinHeight="34" VerticalAlignment="Stretch">
+                      <TextBlock Text="{Binding LaDouane, StringFormat={}{0:N2}}"
+                                 VerticalAlignment="Center" HorizontalAlignment="Right"
+                                 Foreground="{Binding LaDouane, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                    </Border>
+                    <Border Grid.Column="5" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,3,0"
+                            MinHeight="34" VerticalAlignment="Stretch">
+                      <TextBlock Text="{Binding M, StringFormat={}{0:N2}}"
+                                 VerticalAlignment="Center" HorizontalAlignment="Right"
+                                 Foreground="{Binding M, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                    </Border>
                     <NumericUpDown Grid.Column="6" ShowButtonSpinner="False" Value="{Binding CntPs}" FormatString="N0"
                                    Minimum="0" Increment="1" Margin="0,0,3,0" HorizontalAlignment="Stretch"/>
-                    <NumericUpDown Grid.Column="7" ShowButtonSpinner="False" Value="{Binding Tm}" FormatString="N2"
-                                   Increment="1" Margin="0,0,3,0" HorizontalAlignment="Stretch"
-                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
+                    <Border Grid.Column="7" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,3,0"
+                            MinHeight="34" VerticalAlignment="Stretch">
+                      <TextBlock Text="{Binding Tm, StringFormat={}{0:N2}}"
+                                 VerticalAlignment="Center" HorizontalAlignment="Right"
+                                 Foreground="{Binding Tm, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                    </Border>
                     <NumericUpDown Grid.Column="8" ShowButtonSpinner="False" Value="{Binding CntColis}" FormatString="N0"
                                    Minimum="0" Increment="1" Margin="0,0,3,0" HorizontalAlignment="Stretch"/>
-                    <NumericUpDown Grid.Column="9" ShowButtonSpinner="False" Value="{Binding MNet}" FormatString="N2"
-                                   Increment="1" Margin="0,0,2,0" HorizontalAlignment="Stretch"
-                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
-                    <NumericUpDown Grid.Column="10" ShowButtonSpinner="False" Value="{Binding Ca}" FormatString="N2"
-                                   Increment="1" Margin="0,0,2,0" HorizontalAlignment="Stretch"
-                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
-                    <NumericUpDown Grid.Column="11" ShowButtonSpinner="False" Value="{Binding TMarge}" FormatString="N2"
-                                   Increment="1" Margin="0,0,2,0" HorizontalAlignment="Stretch"
-                                   Background="#EEF2FF" IsHitTestVisible="False" Focusable="False"/>
+                    <Border Grid.Column="9" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,2,0"
+                            MinHeight="34" VerticalAlignment="Stretch">
+                      <TextBlock Text="{Binding MNet, StringFormat={}{0:N2}}"
+                                 VerticalAlignment="Center" HorizontalAlignment="Right"
+                                 Foreground="{Binding MNet, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                    </Border>
+                    <Border Grid.Column="10" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,2,0"
+                            MinHeight="34" VerticalAlignment="Stretch">
+                      <TextBlock Text="{Binding Ca, StringFormat={}{0:N2}}"
+                                 VerticalAlignment="Center" HorizontalAlignment="Right"
+                                 Foreground="{Binding Ca, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                    </Border>
+                    <Border Grid.Column="11" Background="#EEF2FF" CornerRadius="6" Padding="6,4" Margin="0,0,2,0"
+                            MinHeight="34" VerticalAlignment="Stretch">
+                      <TextBlock Text="{Binding TMarge, StringFormat={}{0:N2}}"
+                                 VerticalAlignment="Center" HorizontalAlignment="Right"
+                                 Foreground="{Binding TMarge, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
+                    </Border>
                     <Button Grid.Column="12"
                             ToolTip.Tip="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).BtnRemove}"
                             Command="{Binding $parent[UserControl].((vm:ImportCostCalculatorViewModel)DataContext).RemoveTableRowCommand}"
@@ -294,16 +317,19 @@
               <TextBlock Grid.Column="0" Text="{Binding LblTotal}" FontWeight="Bold" FontSize="12"
                          VerticalAlignment="Center" Margin="0,0,4,0"/>
               <Border Grid.Column="9" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
-                <TextBlock Text="{Binding TotalMNet, StringFormat=N2}" FontWeight="Bold" FontSize="12"
-                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                <TextBlock Text="{Binding TotalMNet, StringFormat={}{0:N2}}" FontWeight="Bold" FontSize="12"
+                           VerticalAlignment="Center" HorizontalAlignment="Right"
+                           Foreground="{Binding TotalMNet, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
               </Border>
               <Border Grid.Column="10" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
-                <TextBlock Text="{Binding TotalCa, StringFormat=N2}" FontWeight="Bold" FontSize="12"
-                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                <TextBlock Text="{Binding TotalCa, StringFormat={}{0:N2}}" FontWeight="Bold" FontSize="12"
+                           VerticalAlignment="Center" HorizontalAlignment="Right"
+                           Foreground="{Binding TotalCa, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
               </Border>
               <Border Grid.Column="11" Background="#EEF2FF" CornerRadius="4" Padding="6,4" Margin="0,0,2,0">
-                <TextBlock Text="{Binding TotalTMarge, StringFormat=N2}" FontWeight="Bold" FontSize="12"
-                           VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                <TextBlock Text="{Binding TotalTMarge, StringFormat={}{0:N2}}" FontWeight="Bold" FontSize="12"
+                           VerticalAlignment="Center" HorizontalAlignment="Right"
+                           Foreground="{Binding TotalTMarge, Converter={x:Static conv:PositiveNegativeForegroundConverter.Instance}, ConverterParameter=neg}"/>
               </Border>
             </Grid>
           </Border>

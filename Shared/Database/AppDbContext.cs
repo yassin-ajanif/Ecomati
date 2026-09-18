@@ -36,6 +36,9 @@ public class AppDbContext : DbContext
     public DbSet<AppSettingsRow> AppSettings => Set<AppSettingsRow>();
     public DbSet<TypeCharge> TypesCharge => Set<TypeCharge>();
     public DbSet<Charge> Charges => Set<Charge>();
+    public DbSet<ImportCalcul> ImportCalculs => Set<ImportCalcul>();
+    public DbSet<ImportCalculLigne> ImportCalculLignes => Set<ImportCalculLigne>();
+    public DbSet<ImportCalculLigneRmbFrais> ImportCalculLigneRmbFrais => Set<ImportCalculLigneRmbFrais>();
     public DbSet<Service> Services => Set<Service>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -184,6 +187,28 @@ public class AppDbContext : DbContext
             e.ToTable("Services");
             e.HasIndex(s => s.Reference).IsUnique();
             e.HasIndex(s => s.Actif);
+        });
+
+        modelBuilder.Entity<ImportCalcul>(e =>
+        {
+            e.ToTable("ImportCalculs");
+            e.HasMany(x => x.Lignes).WithOne(l => l.ImportCalcul).HasForeignKey(l => l.ImportCalculId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Date);
+        });
+
+        modelBuilder.Entity<ImportCalculLigne>(e =>
+        {
+            e.ToTable("ImportCalculLignes");
+            e.HasOne(l => l.Produit).WithMany().HasForeignKey(l => l.ProduitId).OnDelete(DeleteBehavior.Restrict);
+            e.HasMany(l => l.RmbFrais).WithOne(f => f.Ligne).HasForeignKey(f => f.ImportCalculLigneId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(l => l.ImportCalculId);
+            e.HasIndex(l => l.ProduitId);
+        });
+
+        modelBuilder.Entity<ImportCalculLigneRmbFrais>(e =>
+        {
+            e.ToTable("ImportCalculLigneRmbFrais");
+            e.HasIndex(f => f.ImportCalculLigneId);
         });
     }
 

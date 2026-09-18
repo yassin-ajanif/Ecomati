@@ -1,0 +1,36 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:GestionCommerciale.Modules.Charges.ViewModels"
+        xmlns:conv="using:GestionCommerciale.Shared.Converters"
+        x:Class="GestionCommerciale.Modules.Charges.Views.ImportCalculPickDialog"
+        x:DataType="vm:ImportCalculPickDialogViewModel"
+        Title="{Binding Title}"
+        Width="480"
+        MinHeight="280"
+        MaxHeight="480"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+  <Border Padding="16">
+    <StackPanel Spacing="12">
+      <TextBlock Text="{Binding LblEmpty}" IsVisible="{Binding !Items.Count}"
+                 Opacity="0.75" TextWrapping="Wrap"/>
+      <ListBox ItemsSource="{Binding Items}"
+               SelectedItem="{Binding SelectedItem}"
+               MinHeight="180"
+               MaxHeight="320"
+               IsVisible="{Binding Items.Count}">
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="vm:ImportCalculPickItem">
+            <TextBlock Text="{Binding Display}" Padding="4,2"/>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+        <Button Content="{Binding BtnCancel}" Command="{Binding CancelCommand}"/>
+        <Button Content="{Binding BtnLoad}" Command="{Binding ConfirmCommand}"
+                IsEnabled="{Binding SelectedItem, Converter={x:Static conv:IsNotNullConverter.Instance}}"/>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</Window>

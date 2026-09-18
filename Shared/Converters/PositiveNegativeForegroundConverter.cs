@@ -10,24 +10,33 @@ public sealed class PositiveNegativeForegroundConverter : IValueConverter
 
     private static readonly IBrush Green = new SolidColorBrush(Color.Parse("#16A34A"));
     private static readonly IBrush Red = new SolidColorBrush(Color.Parse("#DC2626"));
+    private static readonly IBrush DefaultFg = new SolidColorBrush(Color.Parse("#0F172A"));
     private static readonly IBrush GreenBg = new SolidColorBrush(Color.Parse("#DCFCE7"));
     private static readonly IBrush RedBg = new SolidColorBrush(Color.Parse("#FEE2E2"));
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var isPositive = value switch
+        decimal? number = value switch
         {
-            bool b => b,
-            decimal d => d >= 0,
-            _ => (bool?)null
+            decimal d => d,
+            double d => (decimal)d,
+            float f => (decimal)f,
+            int i => i,
+            long l => l,
+            bool b => b ? 1m : -1m,
+            _ => null
         };
-        if (isPositive is null) return null;
+        if (number is null)
+            return DefaultFg;
 
+        var isPositive = number.Value >= 0;
         var kind = (parameter?.ToString() ?? "fg").Trim().ToLowerInvariant();
         return kind switch
         {
-            "bg" => isPositive.Value ? GreenBg : RedBg,
-            _ => isPositive.Value ? Green : Red,
+            "bg" => isPositive ? GreenBg : RedBg,
+            // Red only when negative; keep readable default otherwise (null would hide text).
+            "neg" or "negative" => isPositive ? DefaultFg : Red,
+            _ => isPositive ? Green : Red,
         };
     }
 

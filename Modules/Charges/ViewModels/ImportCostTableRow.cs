@@ -127,15 +127,16 @@ public partial class ImportCostTableRow : ObservableObject, IDisposable
     partial void OnCntPsChanged(decimal? value) => RecalcTm();
     partial void OnCntColisChanged(decimal? value) => RecalcDownstreamFromColis();
 
-    private void RecalcDerived()
+    /// <summary>Recompute all derived columns (PAF, M, TM, M/NET, CA, T/M).</summary>
+    public void RecalcDerived()
     {
         if (Rmb is decimal rmb && Pc is decimal pc)
-            LaDouane = rmb * pc;
+            LaDouane = decimal.Round(rmb * pc, 2);
         else
             LaDouane = null;
 
         if (Pm is decimal pm && LaDouane is decimal paf)
-            M = pm - paf;
+            M = decimal.Round(pm - paf, 2);
         else
             M = null;
 
@@ -145,7 +146,7 @@ public partial class ImportCostTableRow : ObservableObject, IDisposable
     private void RecalcTm()
     {
         if (M is decimal m && CntPs is decimal cnt)
-            Tm = m * cnt;
+            Tm = decimal.Round(m * cnt, 2);
         else
             Tm = null;
 
@@ -155,17 +156,17 @@ public partial class ImportCostTableRow : ObservableObject, IDisposable
     private void RecalcDownstreamFromColis()
     {
         if (Tm is decimal tm && CntColis is decimal colisForNet)
-            MNet = tm * colisForNet;
+            MNet = decimal.Round(tm * colisForNet, 2);
         else
             MNet = null;
 
         if (LaDouane is decimal paf && CntPs is decimal cnt && CntColis is decimal colisForCa)
-            Ca = paf * cnt * colisForCa;
+            Ca = decimal.Round(paf * cnt * colisForCa, 2);
         else
             Ca = null;
 
         if (Pm is decimal pm && CntPs is decimal cntPs && CntColis is decimal cntColis)
-            TMarge = pm * cntPs * cntColis;
+            TMarge = decimal.Round(pm * cntPs * cntColis, 2);
         else
             TMarge = null;
     }
