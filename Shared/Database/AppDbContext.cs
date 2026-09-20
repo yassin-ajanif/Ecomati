@@ -29,6 +29,7 @@ public class AppDbContext : DbContext
     public DbSet<Facture> Factures => Set<Facture>();
     public DbSet<FactureLigne> FactureLignes => Set<FactureLigne>();
     public DbSet<Paiement> Paiements => Set<Paiement>();
+    public DbSet<ReglementGroupe> ReglementsGroupes => Set<ReglementGroupe>();
     public DbSet<Avoir> Avoirs => Set<Avoir>();
     public DbSet<AvoirLigne> AvoirLignes => Set<AvoirLigne>();
     public DbSet<AvoirFournisseur> AvoirsFournisseurs => Set<AvoirFournisseur>();
@@ -143,6 +144,18 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Paiement>(e =>
         {
             e.Property(p => p.Mode).HasConversion<int>();
+            e.HasIndex(p => p.ReglementGroupeId);
+        });
+
+        modelBuilder.Entity<ReglementGroupe>(e =>
+        {
+            e.ToTable("ReglementsGroupes");
+            e.Property(g => g.Sens).HasConversion<int>();
+            e.Property(g => g.Mode).HasConversion<int>();
+            e.Property(g => g.Reference).IsRequired();
+            e.Property(g => g.Note).IsRequired();
+            e.HasIndex(g => g.TiersId);
+            e.HasIndex(g => new { g.TiersId, g.Sens });
         });
 
         modelBuilder.Entity<PaiementFournisseur>(e =>

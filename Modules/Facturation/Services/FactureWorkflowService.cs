@@ -50,6 +50,7 @@ public sealed class FactureWorkflowService : IFactureWorkflowService
         p.Date = date;
         p.Mode = mode;
         p.Reference = reference;
+        await ReglementGroupeSync.RecalculateAsync(db, p.ReglementGroupeId, paiementId, montant, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
     }
 
@@ -57,7 +58,9 @@ public sealed class FactureWorkflowService : IFactureWorkflowService
     {
         await using var db = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var p = await db.Paiements.FirstAsync(x => x.Id == paiementId && x.FactureId == factureId, cancellationToken);
+        var groupeId = p.ReglementGroupeId;
         db.Paiements.Remove(p);
+        await ReglementGroupeSync.RecalculateAsync(db, groupeId, paiementId, 0, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
     }
 }

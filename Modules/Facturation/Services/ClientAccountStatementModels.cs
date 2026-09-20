@@ -17,6 +17,8 @@ public sealed class ClientAccountStatementRow
     public decimal Debit { get; init; }
     public decimal Credit { get; init; }
     public decimal Balance { get; init; }
+    public bool IsAllocationDetail { get; init; }
+    public decimal AllocationAmount { get; init; }
 }
 
 public sealed class ClientAccountStatementResult

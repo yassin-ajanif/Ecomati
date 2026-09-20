@@ -53,7 +53,7 @@
     <Setter Property="Foreground" Value="{DynamicResource CourseraSubtleTextBrush}"/>
   </Style>
 
-  <Style Selector="TextBox, ComboBox, NumericUpDown">
+  <Style Selector="TextBox, ComboBox, NumericUpDown, CalendarDatePicker">
     <Setter Property="Background" Value="{DynamicResource CourseraSurfaceBrush}"/>
     <Setter Property="BorderBrush" Value="{DynamicResource CourseraBorderBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
