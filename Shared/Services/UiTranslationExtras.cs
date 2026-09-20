@@ -167,6 +167,7 @@ internal static class UiTranslationExtras
         ["Lbl_BarcodeField"] = ("Code-barres (EAN / UPC)", "الباركود"),
         ["Lbl_Unite"] = ("Unité", "الوحدة"),
         ["Lbl_StockActuelRo"] = ("Stock actuel (lecture seule)", "المخزون الحالي (قراءة فقط)"),
+        ["Lbl_StockActuel"] = ("Stock actuel", "المخزون الحالي"),
         ["Lbl_PrixAchatHt"] = ("Prix achat HT", "سعر الشراء بدون ضريبة"),
         ["Lbl_PrixVenteHt"] = ("Prix vente HT", "سعر البيع بدون ضريبة"),
         ["Lbl_PrixUnitaire"] = ("Prix unitaire", "سعر الشراء"),

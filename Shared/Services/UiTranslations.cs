@@ -264,6 +264,7 @@ public static class UiTranslations
         ["Prod_ErrDupBarcode"] = ("Un autre produit utilise déjà ce code-barres.", "منتج آخر يستخدم هذا الباركود."),
         ["Prod_Created"] = ("Produit créé.", "تم إنشاء المنتج."),
         ["Prod_Saved"] = ("Fiche enregistrée.", "تم حفظ البطاقة."),
+        ["Prod_StockAdjustFromSheet"] = ("Ajustement depuis fiche produit", "تعديل من بطاقة المنتج"),
         ["Prod_PickImage"] = ("Choisir une image", "اختيار صورة"),
 
         ["ChargesList_Title"] = ("Charges", "المصاريف"),

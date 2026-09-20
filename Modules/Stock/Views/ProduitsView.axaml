@@ -111,7 +111,9 @@
             </StackPanel>
             <StackPanel Grid.Row="2" Grid.Column="1" Margin="16,6,0,0" Spacing="4">
               <TextBlock Text="{Binding LblStockActuel}" FontWeight="SemiBold" FontSize="12"/>
-              <TextBlock Text="{Binding FicheStockActuel, StringFormat={}{0:N2}}" VerticalAlignment="Center" Padding="4,8"/>
+              <NumericUpDown Value="{Binding FicheStockActuel, Mode=TwoWay}" FormatString="N2"
+                             Minimum="-999999" Maximum="999999"
+                             IsEnabled="{Binding FicheEditable}"/>
             </StackPanel>
             <StackPanel Grid.Row="3" Margin="0,6,0,0" Spacing="4">
               <TextBlock Text="{Binding LblPrixAchat}" FontWeight="SemiBold" FontSize="12"/>

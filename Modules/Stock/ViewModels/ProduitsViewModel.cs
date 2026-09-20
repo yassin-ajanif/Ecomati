@@ -25,6 +25,7 @@ public partial class ProduitsViewModel : BaseViewModel
     private readonly ICurrentUserSession _session;
     private readonly ILocaleService _locale;
     private readonly IProductImportExportService _importExport;
+    private readonly IStockMovementService _stock;
 
     private CancellationTokenSource? _imageLoadCts;
     private byte[]? _pendingImageReplacement;
@@ -34,13 +35,20 @@ public partial class ProduitsViewModel : BaseViewModel
 
     private Bitmap? _ficheImagePreview;
 
-    public ProduitsViewModel(IDbContextFactory<AppDbContext> dbFactory, IDialogService dialog, ICurrentUserSession session, ILocaleService locale, IProductImportExportService importExport)
+    public ProduitsViewModel(
+        IDbContextFactory<AppDbContext> dbFactory,
+        IDialogService dialog,
+        ICurrentUserSession session,
+        ILocaleService locale,
+        IProductImportExportService importExport,
+        IStockMovementService stock)
     {
         _dbFactory = dbFactory;
         _dialog = dialog;
         _session = session;
         _locale = locale;
         _importExport = importExport;
+        _stock = stock;
         _locale.CultureApplied += (_, _) => RefreshProduitsUi();
         Pagination = new PaginationHelper(() => _ = LoadProduitsAsync(CancellationToken.None));
         RefreshProduitsUi();
@@ -93,7 +101,7 @@ public partial class ProduitsViewModel : BaseViewModel
         LblDesignation = _locale.T("Lbl_DesignationField");
         LblBarcode = _locale.T("Lbl_BarcodeField");
         LblUnite = _locale.T("Lbl_Unite");
-        LblStockActuel = _locale.T("Lbl_StockActuelRo");
+        LblStockActuel = _locale.T("Lbl_StockActuel");
         LblPrixAchat = _locale.T("Lbl_PrixUnitaire");
         LblPrixVente = _locale.T("Lbl_PrixDeVente");
         LblStockMin = _locale.T("Lbl_StockMinField");
@@ -517,7 +525,20 @@ public partial class ProduitsViewModel : BaseViewModel
                     ImageData = _clearImageOnSave ? null : _pendingImageReplacement,
                 };
                 db.Produits.Add(entity);
-                await db.SaveChangesAsync(cancellationToken);
+                await using var createTx = await db.Database.BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    await db.SaveChangesAsync(cancellationToken);
+                    await ApplyStockTargetAsync(db, entity.Id, 0, FicheStockActuel, cancellationToken);
+                    await db.SaveChangesAsync(cancellationToken);
+                    await createTx.CommitAsync(cancellationToken);
+                }
+                catch
+                {
+                    await createTx.RollbackAsync(cancellationToken);
+                    throw;
+                }
+
                 var newId = entity.Id;
                 _pendingImageReplacement = null;
                 _clearImageOnSave = false;
@@ -573,17 +594,56 @@ public partial class ProduitsViewModel : BaseViewModel
             else if (_pendingImageReplacement != null)
                 entityUpdate.ImageData = _pendingImageReplacement;
 
-            await db.SaveChangesAsync(cancellationToken);
+            await using var updateTx = await db.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var stockBefore = entityUpdate.StockActuel;
+                await ApplyStockTargetAsync(db, entityUpdate.Id, stockBefore, FicheStockActuel, cancellationToken);
+                await db.SaveChangesAsync(cancellationToken);
+                await updateTx.CommitAsync(cancellationToken);
+            }
+            catch
+            {
+                await updateTx.RollbackAsync(cancellationToken);
+                throw;
+            }
+
             _pendingImageReplacement = null;
             _clearImageOnSave = false;
 
             await _dialog.ShowInfoAsync(_locale.T("Nav_Produits"), _locale.T("Prod_Saved"), cancellationToken);
             await LoadProduitsAsync(cancellationToken);
+            SelectedProduit = Produits.FirstOrDefault(p => p.Id == id);
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private async Task ApplyStockTargetAsync(
+        AppDbContext db,
+        int produitId,
+        decimal stockBefore,
+        decimal stockTarget,
+        CancellationToken cancellationToken)
+    {
+        var delta = stockTarget - stockBefore;
+        if (delta == 0)
+            return;
+
+        var libInventaire = _locale.T("Stock_DefaultMotif");
+        var note = _locale.T("Prod_StockAdjustFromSheet");
+        await _stock.ApplyMovementAsync(
+            db,
+            produitId,
+            TypeMouvement.Ajustement,
+            delta,
+            libInventaire,
+            null,
+            note,
+            _session.UserId,
+            cancellationToken);
     }
 
     [RelayCommand]
