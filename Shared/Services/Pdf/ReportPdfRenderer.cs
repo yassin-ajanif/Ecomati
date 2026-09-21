@@ -16,7 +16,9 @@ public static class ReportPdfRenderer
     private const string TableRowAlt = "#F9FAFB";
     private const string TableDetailBg = "#E8F1FB";
     private const string TableDetailBgAlt = "#DCEAF8";
+    private const string TableDayHeaderBg = "#F3F4F6";
     private const string TextDetail = "#1E3A5F";
+    private const string TextDayHeader = "#374151";
     private const float HeaderLogoWidth = 128f;
     private const float HeaderLogoHeight = 78f;
 
@@ -32,7 +34,12 @@ public static class ReportPdfRenderer
                 {
                     Cells = cells.AsEnumerable().Reverse().ToList(),
                     CellImages = PadCellImages(cells, r.CellImages)?.AsEnumerable().Reverse().ToList(),
-                    IsDetail = r.IsDetail
+                    IsDetail = r.IsDetail,
+                    IsDayHeader = r.IsDayHeader,
+                    IsSpacer = r.IsSpacer,
+                    IsClientSeparator = r.IsClientSeparator,
+                    DayHeaderOn = r.DayHeaderOn,
+                    DayHeaderDayName = r.DayHeaderDayName
                 };
             }).ToList()
             : model.Rows.ToList();
@@ -83,8 +90,9 @@ public static class ReportPdfRenderer
                         period.Text(model.PeriodLabel).FontSize(9).FontColor(TextMuted);
                     }
 
+                    var dataRowCount = model.Rows.Count(r => !r.IsSpacer && !r.IsClientSeparator);
                     var countLine = rtl ? header.Item().AlignRight() : header.Item();
-                    countLine.Text($"{model.Rows.Count} ligne(s)")
+                    countLine.Text($"{dataRowCount} ligne(s)")
                         .FontSize(8.5f).FontColor(TextMuted);
                 });
 
@@ -107,23 +115,62 @@ public static class ReportPdfRenderer
                         var i = 0;
                         foreach (var row in rows)
                         {
-                            var bg = row.IsDetail
-                                ? (i % 2 == 1 ? TableDetailBgAlt : TableDetailBg)
-                                : (i % 2 == 1 ? TableRowAlt : "#FFFFFF");
-                            var textColor = row.IsDetail ? TextDetail : TextPrimary;
+                            if (row.IsClientSeparator)
+                            {
+                                table.Cell().ColumnSpan((uint)columns.Count)
+                                    .Height(10).Background("#FFFFFF")
+                                    .BorderBottom(1.5f).BorderColor(TableBorder)
+                                    .PaddingVertical(4);
+                                continue;
+                            }
+
+                            if (row.IsSpacer)
+                            {
+                                for (var c = 0; c < columns.Count; c++)
+                                {
+                                    table.Cell().Height(12).Background("#FFFFFF")
+                                        .Border(0).Padding(0);
+                                }
+                                continue;
+                            }
+
+                            var bg = row.IsDayHeader
+                                ? TableDayHeaderBg
+                                : row.IsDetail
+                                    ? (i % 2 == 1 ? TableDetailBgAlt : TableDetailBg)
+                                    : (i % 2 == 1 ? TableRowAlt : "#FFFFFF");
+                            var textColor = row.IsDayHeader
+                                ? TextDayHeader
+                                : row.IsDetail ? TextDetail : TextPrimary;
                             for (var c = 0; c < columns.Count; c++)
                             {
                                 var text = c < row.Cells.Count ? row.Cells[c] : string.Empty;
                                 byte[]? image = row.CellImages is not null && c < row.CellImages.Count
                                     ? row.CellImages[c]
                                     : null;
-                                BodyCell(
-                                    table.Cell().Background(bg),
-                                    text,
-                                    image,
-                                    CellAlignRight(columns[c].Align, rtl),
-                                    textColor,
-                                    row.IsDetail);
+                                var isLabelCol = row.IsDayHeader
+                                    && row.DayHeaderOn is not null
+                                    && c == (rtl ? columns.Count - 1 : 0);
+
+                                if (isLabelCol)
+                                {
+                                    DayHeaderCell(
+                                        table.Cell().Background(bg),
+                                        row.DayHeaderOn!.Value,
+                                        row.DayHeaderDayName,
+                                        textColor);
+                                }
+                                else
+                                {
+                                    BodyCell(
+                                        table.Cell().Background(bg),
+                                        text,
+                                        image,
+                                        CellAlignRight(columns[c].Align, rtl),
+                                        textColor,
+                                        row.IsDetail,
+                                        row.IsDayHeader);
+                                }
                             }
                             i++;
                         }
@@ -203,13 +250,46 @@ public static class ReportPdfRenderer
         return padded;
     }
 
+    private static void DayHeaderCell(
+        IContainer cell,
+        DateTime date,
+        string? dayName,
+        string textColor)
+    {
+        cell.Border(0.5f).BorderColor(TableBorder).Padding(4)
+            .AlignMiddle().AlignLeft().Row(row =>
+            {
+                row.Spacing(6);
+                // Each date segment is its own run so RTL bidi cannot reorder digits.
+                row.AutoItem().Row(dateRow =>
+                {
+                    dateRow.Spacing(0);
+                    void Part(string s)
+                    {
+                        dateRow.AutoItem().Text(s).FontSize(8.5f).FontColor(textColor).SemiBold();
+                    }
+                    Part(date.Day.ToString("00", CultureFr));
+                    Part("/");
+                    Part(date.Month.ToString("00", CultureFr));
+                    Part("/");
+                    Part(date.Year.ToString("0000", CultureFr));
+                });
+                if (!string.IsNullOrWhiteSpace(dayName))
+                {
+                    row.AutoItem().Text("—").FontSize(8.5f).FontColor(TextMuted);
+                    row.AutoItem().Text(dayName).FontSize(8.5f).FontColor(textColor).SemiBold();
+                }
+            });
+    }
+
     private static void BodyCell(
         IContainer cell,
         string text,
         byte[]? imageBytes,
         bool alignRight,
         string textColor,
-        bool isDetail)
+        bool isDetail,
+        bool isDayHeader = false)
     {
         var c = cell.Border(0.5f).BorderColor(TableBorder).Padding(4);
         if (imageBytes is { Length: > 0 })
@@ -219,7 +299,7 @@ public static class ReportPdfRenderer
                 col.Spacing(2);
                 col.Item().Height(CellImageSize).Image(imageBytes).FitArea();
                 var styled = col.Item().Text(text).FontSize(isDetail ? 8f : 8.5f).FontColor(textColor);
-                if (!isDetail)
+                if (!isDetail || isDayHeader)
                     styled.SemiBold();
             });
             return;
@@ -228,8 +308,9 @@ public static class ReportPdfRenderer
         c = c.AlignMiddle();
         if (alignRight)
             c = c.AlignRight();
-        var plain = c.Text(text).FontSize(isDetail ? 8f : 8.5f).FontColor(textColor);
-        if (!isDetail)
+        var fontSize = isDetail ? 8f : 8.5f;
+        var plain = c.Text(text).FontSize(fontSize).FontColor(textColor);
+        if (!isDetail || isDayHeader)
             plain.SemiBold();
     }
 }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using GestionCommerciale.Modules.AvoirFournisseur.Models;
 using GestionCommerciale.Modules.Charges.Models;
 using GestionCommerciale.Modules.Facturation.Models;
@@ -121,6 +122,7 @@ public sealed class ReportService : IReportService
         DateTime from, DateTime to, CancellationToken ct = default)
     {
         var dev = await GetDeviseAsync(ct);
+        var culture = GetUiCulture();
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var toEnd = to.Date.AddDays(1);
 
@@ -130,6 +132,7 @@ public sealed class ReportService : IReportService
             {
                 f.Id,
                 f.ClientId,
+                f.Date,
                 Lignes = f.Lignes!.Select(l => new
                 {
                     l.ProduitId,
@@ -172,58 +175,92 @@ public sealed class ReportService : IReportService
             {
                 var c = clientMap.GetValueOrDefault(g.Key);
 
-                var allLignes = g.SelectMany(f => f.Lignes).ToList();
-
-                // Per-product / service sub-rows (profit before global discount)
-                var productRows = allLignes
-                    .Where(l => l.ProduitId is > 0)
-                    .GroupBy(l => l.ProduitId!.Value)
-                    .Select(pg =>
+                var days = g.GroupBy(f => f.Date.Date)
+                    .OrderByDescending(dg => dg.Key)
+                    .Select(dg =>
                     {
-                        var p = prodMap.GetValueOrDefault(pg.Key);
-                        var prixAchat = p?.PrixAchatHT ?? 0;
-                        var ht = pg.Sum(l => l.Quantite * l.PrixUnitaireHT);
-                        var cost = pg.Sum(l => l.Quantite * prixAchat);
-                        var profit = ht - cost;
-                        var marginPct = ht > 0 ? profit / ht * 100m : 0;
-                        return new ReportSaleByCustomerProductRow(
-                            p?.Reference ?? string.Empty,
-                            p?.Designation ?? pg.First().Designation,
-                            pg.Sum(l => l.Quantite),
-                            ht,
-                            ht,
-                            dev,
-                            profit,
-                            marginPct);
-                    });
+                        var dayLignes = dg.SelectMany(f => f.Lignes).ToList();
 
-                var serviceRows = allLignes
-                    .Where(l => l.ServiceId is > 0)
-                    .GroupBy(l => l.ServiceId!.Value)
-                    .Select(sg =>
-                    {
-                        var s = svcMap.GetValueOrDefault(sg.Key);
-                        var cout = s?.CoutHT ?? 0;
-                        var ht = sg.Sum(l => l.Quantite * l.PrixUnitaireHT);
-                        var cost = sg.Sum(l => l.Quantite * cout);
-                        var profit = ht - cost;
-                        var marginPct = ht > 0 ? profit / ht * 100m : 0;
-                        return new ReportSaleByCustomerProductRow(
-                            s?.Reference ?? string.Empty,
-                            s?.Designation ?? sg.First().Designation,
-                            sg.Sum(l => l.Quantite),
-                            ht,
-                            ht,
-                            dev,
-                            profit,
-                            marginPct);
-                    });
+                        var productRows = dayLignes
+                            .Where(l => l.ProduitId is > 0)
+                            .GroupBy(l => l.ProduitId!.Value)
+                            .Select(pg =>
+                            {
+                                var p = prodMap.GetValueOrDefault(pg.Key);
+                                var prixAchat = p?.PrixAchatHT ?? 0;
+                                var ht = pg.Sum(l => l.Quantite * l.PrixUnitaireHT);
+                                var cost = pg.Sum(l => l.Quantite * prixAchat);
+                                var profit = ht - cost;
+                                var dayMarginPct = ht > 0 ? profit / ht * 100m : 0;
+                                return new ReportSaleByCustomerProductRow(
+                                    p?.Reference ?? string.Empty,
+                                    p?.Designation ?? pg.First().Designation,
+                                    pg.Sum(l => l.Quantite),
+                                    ht,
+                                    ht,
+                                    dev,
+                                    profit,
+                                    dayMarginPct);
+                            });
 
-                var products = productRows.Concat(serviceRows)
-                    .OrderByDescending(pr => pr.TotalTtc)
+                        var serviceRows = dayLignes
+                            .Where(l => l.ServiceId is > 0)
+                            .GroupBy(l => l.ServiceId!.Value)
+                            .Select(sg =>
+                            {
+                                var s = svcMap.GetValueOrDefault(sg.Key);
+                                var cout = s?.CoutHT ?? 0;
+                                var ht = sg.Sum(l => l.Quantite * l.PrixUnitaireHT);
+                                var cost = sg.Sum(l => l.Quantite * cout);
+                                var profit = ht - cost;
+                                var dayMarginPct = ht > 0 ? profit / ht * 100m : 0;
+                                return new ReportSaleByCustomerProductRow(
+                                    s?.Reference ?? string.Empty,
+                                    s?.Designation ?? sg.First().Designation,
+                                    sg.Sum(l => l.Quantite),
+                                    ht,
+                                    ht,
+                                    dev,
+                                    profit,
+                                    dayMarginPct);
+                            });
+
+                        var products = productRows.Concat(serviceRows)
+                            .OrderByDescending(pr => pr.TotalTtc)
+                            .ToList();
+
+                        decimal dayHt = 0, dayCost = 0;
+                        foreach (var f in dg)
+                        {
+                            foreach (var l in f.Lignes)
+                            {
+                                var lht = l.Quantite * l.PrixUnitaireHT;
+                                decimal unitCost = 0;
+                                if (l.ProduitId is int pid)
+                                    unitCost = prodMap.GetValueOrDefault(pid)?.PrixAchatHT ?? 0;
+                                else if (l.ServiceId is int sid)
+                                    unitCost = svcMap.GetValueOrDefault(sid)?.CoutHT ?? 0;
+                                dayHt += lht;
+                                dayCost += l.Quantite * unitCost;
+                            }
+                        }
+
+                        var dayProfit = dayHt - dayCost;
+                        var dayMarginPctTotal = dayHt > 0 ? dayProfit / dayHt * 100m : 0;
+
+                        return new ReportSaleByCustomerDayRow(
+                            dg.Key,
+                            dg.Count(),
+                            dayHt,
+                            dayHt,
+                            dev,
+                            dayProfit,
+                            dayMarginPctTotal,
+                            culture,
+                            products);
+                    })
                     .ToList();
 
-                // Client-level totals with profit (global discount applied)
                 decimal totalHt = 0, totalCost = 0;
                 foreach (var f in g)
                 {
@@ -253,7 +290,7 @@ public sealed class ReportService : IReportService
                     dev,
                     totalProfit,
                     marginPct,
-                    products);
+                    days);
             })
             .OrderByDescending(r => r.TotalTtc)
             .ToList();
@@ -784,4 +821,9 @@ public sealed class ReportService : IReportService
         var cfg = await _settings.GetAsync(ct);
         return string.IsNullOrWhiteSpace(cfg.Devise) ? "MAD" : cfg.Devise!;
     }
+
+    private CultureInfo GetUiCulture() =>
+        _locale.CurrentLanguage.StartsWith("ar", StringComparison.OrdinalIgnoreCase)
+            ? CultureInfo.GetCultureInfo("ar")
+            : CultureInfo.GetCultureInfo("fr-FR");
 }

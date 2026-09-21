@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -273,6 +274,13 @@ public partial class ReportsListViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private void ToggleCustomerDayExpand(ReportSaleByCustomerDayRow? row)
+    {
+        if (row != null)
+            row.IsExpanded = !row.IsExpanded;
+    }
+
+    [RelayCommand]
     private void ToggleDailyExpand(ReportDailySaleRow? row)
     {
         if (row != null)
@@ -518,6 +526,28 @@ public partial class ReportsListViewModel : BaseViewModel
     private static ReportPdfRow PdfDetailRow(params string[] cells) =>
         new() { Cells = cells, IsDetail = true };
 
+    private static ReportPdfRow PdfDayHeaderRow(
+        DateTime date,
+        string dayName,
+        params string[] otherCells)
+    {
+        var cells = new List<string> { string.Empty };
+        cells.AddRange(otherCells);
+        return new ReportPdfRow
+        {
+            Cells = cells,
+            IsDayHeader = true,
+            DayHeaderOn = date,
+            DayHeaderDayName = dayName
+        };
+    }
+
+    private static ReportPdfRow PdfSpacerRow(int columnCount) =>
+        new() { Cells = Enumerable.Repeat(string.Empty, columnCount).ToList(), IsSpacer = true };
+
+    private static ReportPdfRow PdfClientSeparatorRow(int columnCount) =>
+        new() { Cells = Enumerable.Repeat(string.Empty, columnCount).ToList(), IsClientSeparator = true };
+
     private ReportPdfModel BuildProfitChargesPdf(string? period, PdfTextAlignment right)
     {
         var source = _filteredProfitCharges.Count > 0 || _profitFilterKind != null
@@ -581,13 +611,34 @@ public partial class ReportsListViewModel : BaseViewModel
 
     private ReportPdfModel BuildSalesByCustomerPdf(string? period, PdfTextAlignment right)
     {
+        const int columnCount = 6;
         var totalLabel = _locale.T("Fact_ColTotal");
+        var culture = _locale.CurrentLanguage.StartsWith("ar", StringComparison.OrdinalIgnoreCase)
+            ? CultureInfo.GetCultureInfo("ar")
+            : CultureInfo.GetCultureInfo("fr-FR");
         var rows = new List<ReportPdfRow>();
+        var clientIndex = 0;
         foreach (var r in _filteredSalesByCustomer)
         {
+            if (clientIndex > 0)
+                rows.Add(PdfClientSeparatorRow(columnCount));
+            clientIndex++;
+
             rows.Add(PdfRow(r.Client, "", "", r.LblTtc, r.LblProfit, r.LblMargin));
-            foreach (var p in r.Products)
-                rows.Add(PdfDetailRow($"  • {p.Reference} {p.Designation}", p.LblQty, p.LblUnitPrice, p.LblTtc, p.LblProfit, p.LblMargin));
+            var dayIndex = 0;
+            foreach (var d in r.Days)
+            {
+                if (dayIndex > 0)
+                    rows.Add(PdfSpacerRow(columnCount));
+                dayIndex++;
+
+                rows.Add(PdfDayHeaderRow(
+                    d.Date,
+                    d.LblDayName,
+                    d.LblCount, "", d.LblTtc, d.LblProfit, d.LblMargin));
+                foreach (var p in d.Products)
+                    rows.Add(PdfDetailRow($"  • {p.Reference} {p.Designation}", p.LblQty, p.LblUnitPrice, p.LblTtc, p.LblProfit, p.LblMargin));
+            }
         }
 
         return new ReportPdfModel

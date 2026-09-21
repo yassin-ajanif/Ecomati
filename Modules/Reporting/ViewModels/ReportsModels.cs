@@ -1,6 +1,8 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using GestionCommerciale.Shared.Helpers;
 
 namespace GestionCommerciale.Modules.Reporting.ViewModels;
 
@@ -83,12 +85,65 @@ public sealed class ReportSaleByCustomerProductRow
         qty == decimal.Truncate(qty) ? qty.ToString("N0") : qty.ToString("N2");
 }
 
+public sealed partial class ReportSaleByCustomerDayRow : ObservableObject
+{
+    public ReportSaleByCustomerDayRow(DateTime date, int nbFactures,
+        decimal totalHt, decimal totalTtc, string devise,
+        decimal profit, decimal marginPct,
+        CultureInfo culture,
+        List<ReportSaleByCustomerProductRow>? products = null)
+    {
+        Date = date;
+        NbFactures = nbFactures;
+        TotalHt = totalHt;
+        TotalTtc = totalTtc;
+        Profit = profit;
+        MarginPct = marginPct;
+        Devise = devise;
+        LblDayName = DisplayDateHelper.DayName(date, culture);
+        LblDate = DisplayDateHelper.ShortDatePdf(date);
+        LblDayLabel = DisplayDateHelper.DayLabel(date, culture);
+        LblCount = nbFactures.ToString();
+        LblHt = $"{totalHt:N2} {devise}";
+        LblTtc = $"{totalTtc:N2} {devise}";
+        LblProfit = $"{profit:N2} {devise}";
+        LblMargin = $"{marginPct:N1}%";
+        if (products != null)
+        {
+            foreach (var p in products)
+                _products.Add(p);
+        }
+    }
+
+    public DateTime Date { get; }
+    public int NbFactures { get; }
+    public decimal TotalHt { get; }
+    public decimal TotalTtc { get; }
+    public decimal Profit { get; }
+    public decimal MarginPct { get; }
+    public string Devise { get; }
+    public string LblDayName { get; }
+    public string LblDate { get; }
+    public string LblDayLabel { get; }
+    public string LblCount { get; }
+    public string LblHt { get; }
+    public string LblTtc { get; }
+    public string LblProfit { get; }
+    public string LblMargin { get; }
+
+    [ObservableProperty]
+    private bool _isExpanded;
+
+    private readonly ObservableCollection<ReportSaleByCustomerProductRow> _products = [];
+    public ObservableCollection<ReportSaleByCustomerProductRow> Products => _products;
+}
+
 public sealed partial class ReportSaleByCustomerRow : ObservableObject
 {
     public ReportSaleByCustomerRow(int clientId, string client, string ice, string ville,
         int nbFactures, decimal totalHt, decimal totalTtc, string devise,
         decimal profit, decimal marginPct,
-        List<ReportSaleByCustomerProductRow>? products = null)
+        List<ReportSaleByCustomerDayRow>? days = null)
     {
         ClientId = clientId;
         Client = client;
@@ -105,10 +160,10 @@ public sealed partial class ReportSaleByCustomerRow : ObservableObject
         LblTtc = $"{totalTtc:N2} {devise}";
         LblProfit = $"{profit:N2} {devise}";
         LblMargin = $"{marginPct:N1}%";
-        if (products != null)
+        if (days != null)
         {
-            foreach (var p in products)
-                _products.Add(p);
+            foreach (var d in days)
+                _days.Add(d);
         }
     }
 
@@ -131,8 +186,8 @@ public sealed partial class ReportSaleByCustomerRow : ObservableObject
     [ObservableProperty]
     private bool _isExpanded;
 
-    private readonly ObservableCollection<ReportSaleByCustomerProductRow> _products = [];
-    public ObservableCollection<ReportSaleByCustomerProductRow> Products => _products;
+    private readonly ObservableCollection<ReportSaleByCustomerDayRow> _days = [];
+    public ObservableCollection<ReportSaleByCustomerDayRow> Days => _days;
 }
 
 public sealed class ReportRefundRow
