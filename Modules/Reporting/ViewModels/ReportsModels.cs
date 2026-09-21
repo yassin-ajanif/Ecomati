@@ -219,11 +219,48 @@ public sealed class ReportRefundRow
     public string LblRetour { get; }
 }
 
-public sealed class ReportDailySaleDetailRow
+public sealed class ReportDailySaleLineRow
+{
+    public ReportDailySaleLineRow(string reference, string designation,
+        decimal quantite, decimal totalHt, decimal totalTtc, string devise,
+        decimal profit, decimal marginPct)
+    {
+        Reference = reference;
+        Designation = designation;
+        Quantite = quantite;
+        TotalHt = totalHt;
+        TotalTtc = totalTtc;
+        UnitPrice = quantite > 0 ? totalTtc / quantite : 0;
+        Profit = profit;
+        MarginPct = marginPct;
+        LblQty = ReportSaleByCustomerProductRow.FormatQty(quantite);
+        LblUnitPrice = $"{UnitPrice:N2} {devise}";
+        LblTtc = $"{totalTtc:N2} {devise}";
+        LblProfit = $"{profit:N2} {devise}";
+        LblMargin = $"{marginPct:N1}%";
+    }
+
+    public string Reference { get; }
+    public string Designation { get; }
+    public decimal Quantite { get; }
+    public decimal UnitPrice { get; }
+    public decimal TotalHt { get; }
+    public decimal TotalTtc { get; }
+    public decimal Profit { get; }
+    public decimal MarginPct { get; }
+    public string LblQty { get; }
+    public string LblUnitPrice { get; }
+    public string LblTtc { get; }
+    public string LblProfit { get; }
+    public string LblMargin { get; }
+}
+
+public sealed partial class ReportDailySaleDetailRow : ObservableObject
 {
     public ReportDailySaleDetailRow(string numero, string client,
         decimal totalHt, decimal totalTtc, string devise,
-        decimal profit, decimal marginPct)
+        decimal profit, decimal marginPct,
+        List<ReportDailySaleLineRow>? lines = null)
     {
         Numero = numero;
         Client = client;
@@ -236,6 +273,11 @@ public sealed class ReportDailySaleDetailRow
         LblTtc = $"{totalTtc:N2} {devise}";
         LblProfit = $"{profit:N2} {devise}";
         LblMargin = $"{marginPct:N1}%";
+        if (lines != null)
+        {
+            foreach (var line in lines)
+                _lines.Add(line);
+        }
     }
 
     public string Numero { get; }
@@ -249,6 +291,12 @@ public sealed class ReportDailySaleDetailRow
     public string LblTtc { get; }
     public string LblProfit { get; }
     public string LblMargin { get; }
+
+    [ObservableProperty]
+    private bool _isExpanded;
+
+    private readonly ObservableCollection<ReportDailySaleLineRow> _lines = [];
+    public ObservableCollection<ReportDailySaleLineRow> Lines => _lines;
 }
 
 public sealed partial class ReportDailySaleRow : ObservableObject

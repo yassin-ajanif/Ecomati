@@ -288,6 +288,13 @@ public partial class ReportsListViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private void ToggleDailyInvoiceExpand(ReportDailySaleDetailRow? row)
+    {
+        if (row != null)
+            row.IsExpanded = !row.IsExpanded;
+    }
+
+    [RelayCommand]
     private async Task LoadReportAsync(CancellationToken cancellationToken)
     {
         if (!_session.CanAccessReporting)
@@ -694,7 +701,21 @@ public partial class ReportsListViewModel : BaseViewModel
         {
             rows.Add(PdfRow(r.LblDate, r.LblCount, r.LblTtc, r.LblProfit, r.LblMargin));
             foreach (var d in r.Details)
-                rows.Add(PdfDetailRow($"  • {d.Numero}", d.Client, d.LblTtc, d.LblProfit, d.LblMargin));
+            {
+                rows.Add(PdfDetailRow($"  {d.Numero}", d.Client, d.LblTtc, d.LblProfit, d.LblMargin));
+                foreach (var line in d.Lines)
+                {
+                    var label = string.IsNullOrWhiteSpace(line.Reference)
+                        ? line.Designation
+                        : $"{line.Reference} {line.Designation}";
+                    rows.Add(PdfDetailRow(
+                        $"    • {label} ({line.LblQty} × {line.LblUnitPrice})",
+                        "",
+                        line.LblTtc,
+                        line.LblProfit,
+                        line.LblMargin));
+                }
+            }
         }
 
         return new ReportPdfModel

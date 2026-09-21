@@ -358,7 +358,8 @@ public sealed class ReportService : IReportService
                     l.ProduitId,
                     l.ServiceId,
                     l.Quantite,
-                    l.PrixUnitaireHT
+                    l.PrixUnitaireHT,
+                    l.Designation
                 }).ToList()
             })
             .ToListAsync(ct);
@@ -375,7 +376,7 @@ public sealed class ReportService : IReportService
             ? []
             : await db.Produits.AsNoTracking()
                 .Where(p => allProdIds.Contains(p.Id))
-                .Select(p => new { p.Id, p.PrixAchatHT })
+                .Select(p => new { p.Id, p.Reference, p.Designation, p.PrixAchatHT })
                 .ToListAsync(ct);
         var prodMap = produits.ToDictionary(p => p.Id);
 
@@ -384,7 +385,7 @@ public sealed class ReportService : IReportService
             ? []
             : await db.Services.AsNoTracking()
                 .Where(s => allSvcIds.Contains(s.Id))
-                .Select(s => new { s.Id, s.CoutHT })
+                .Select(s => new { s.Id, s.Reference, s.Designation, s.CoutHT })
                 .ToListAsync(ct);
         var svcMap = services.ToDictionary(s => s.Id);
 
@@ -397,16 +398,41 @@ public sealed class ReportService : IReportService
                 var details = g.Select(f =>
                 {
                     decimal ht = 0, cost = 0;
+                    var lineRows = new List<ReportDailySaleLineRow>();
                     foreach (var l in f.Lignes)
                     {
                         var lht = l.Quantite * l.PrixUnitaireHT;
                         decimal unitCost = 0;
-                        if (l.ProduitId is int pid)
-                            unitCost = prodMap.GetValueOrDefault(pid)?.PrixAchatHT ?? 0;
-                        else if (l.ServiceId is int sid)
-                            unitCost = svcMap.GetValueOrDefault(sid)?.CoutHT ?? 0;
+                        string reference = string.Empty;
+                        var designation = l.Designation;
+                        if (l.ProduitId is int pid && prodMap.TryGetValue(pid, out var prod))
+                        {
+                            unitCost = prod.PrixAchatHT;
+                            reference = prod.Reference;
+                            designation = prod.Designation;
+                        }
+                        else if (l.ServiceId is int sid && svcMap.TryGetValue(sid, out var svc))
+                        {
+                            unitCost = svc.CoutHT;
+                            reference = svc.Reference;
+                            designation = svc.Designation;
+                        }
+
+                        var lineCost = l.Quantite * unitCost;
+                        var lineProfit = lht - lineCost;
+                        var lineMarginPct = lht > 0 ? lineProfit / lht * 100m : 0;
+                        lineRows.Add(new ReportDailySaleLineRow(
+                            reference,
+                            designation,
+                            l.Quantite,
+                            lht,
+                            lht,
+                            dev,
+                            lineProfit,
+                            lineMarginPct));
+
                         ht += lht;
-                        cost += l.Quantite * unitCost;
+                        cost += lineCost;
                     }
                     dayHt += ht;
                     dayCost += cost;
@@ -419,7 +445,8 @@ public sealed class ReportService : IReportService
                         ht,
                         dev,
                         profit,
-                        marginPct);
+                        marginPct,
+                        lineRows);
                 }).ToList();
 
                 var dayProfit = dayHt - dayCost;
