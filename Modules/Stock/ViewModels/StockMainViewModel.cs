@@ -114,7 +114,7 @@ public partial class StockMainViewModel : BaseViewModel
 
     [ObservableProperty] private string _movementClientSearch = string.Empty;
 
-    [ObservableProperty] private decimal _ajustementStockCible;
+    [ObservableProperty] private decimal _ajustementDelta;
     [ObservableProperty] private string _ajustementNote = string.Empty;
 
     [RelayCommand]
@@ -184,7 +184,6 @@ public partial class StockMainViewModel : BaseViewModel
     {
         Mouvements.Clear();
         MovementClientSearch = string.Empty;
-        AjustementStockCible = value?.StockActuel ?? 0;
         OnPropertyChanged(nameof(IsMovementClientSearchEnabled));
         if (value == null) return;
         _currentProduitId = value.Id;
@@ -364,8 +363,7 @@ public partial class StockMainViewModel : BaseViewModel
     private async Task AjustementAsync(CancellationToken cancellationToken)
     {
         if (SelectedProduit == null) return;
-        var delta = AjustementStockCible - SelectedProduit.StockActuel;
-        if (delta == 0)
+        if (AjustementDelta == 0)
         {
             await _dialog.ShowErrorAsync(_locale.T("Stock_Title"), _locale.T("Stock_ErrVariation"), cancellationToken);
             return;
@@ -386,7 +384,7 @@ public partial class StockMainViewModel : BaseViewModel
                 db,
                 id,
                 TypeMouvement.Ajustement,
-                delta,
+                AjustementDelta,
                 libInventaire,
                 null,
                 detailNote,
@@ -394,13 +392,11 @@ public partial class StockMainViewModel : BaseViewModel
                 cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
             await trx.CommitAsync(cancellationToken);
+            AjustementDelta = 0;
             AjustementNote = string.Empty;
             await LoadProduitsAsync(cancellationToken);
             if (SelectedProduit != null)
-            {
-                AjustementStockCible = SelectedProduit.StockActuel;
                 await LoadMouvementsAsync(SelectedProduit.Id, cancellationToken);
-            }
         }
         catch (Exception ex)
         {
