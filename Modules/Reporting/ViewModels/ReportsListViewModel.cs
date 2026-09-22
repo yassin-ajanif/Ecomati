@@ -155,7 +155,7 @@ public partial class ReportsListViewModel : BaseViewModel
     private List<ReportSaleByCustomerRow> _filteredSalesByCustomer = [];
     private bool _clientsLoaded;
     private List<ReportRefundRow> _allRefunds = [];
-    private List<ReportDailySaleRow> _allDailySales = [];
+    private List<ReportDailySalesByDayRow> _dailySalesByDay = [];
     private List<ReportLowStockRow> _allLowStock = [];
     private List<ReportStockMovementRow> _allStockMovements = [];
     private List<ReportProfitChargeRow> _allProfitCharges = [];
@@ -169,7 +169,7 @@ public partial class ReportsListViewModel : BaseViewModel
     public ObservableCollection<TiersEntity> SaleByCustomerClients { get; } = [];
     public AutoCompleteFilterPredicate<object?> PartyAutocompleteFilter => PartyAutoComplete.ItemFilter;
     public ObservableCollection<ReportRefundRow> Refunds { get; } = [];
-    public ObservableCollection<ReportDailySaleRow> DailySales { get; } = [];
+    public ObservableCollection<ReportDailySalesByDayRow> DailySales { get; } = [];
     public ObservableCollection<ReportLowStockRow> LowStockProducts { get; } = [];
     public ObservableCollection<ReportStockMovementRow> StockMovements { get; } = [];
     public ObservableCollection<ReportProfitChargeRow> ProfitCharges { get; } = [];
@@ -282,14 +282,14 @@ public partial class ReportsListViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    private void ToggleDailyExpand(ReportDailySaleRow? row)
+    private void ToggleDailyDayExpand(ReportDailySalesByDayRow? row)
     {
         if (row != null)
             row.IsExpanded = !row.IsExpanded;
     }
 
     [RelayCommand]
-    private void ToggleDailyInvoiceExpand(ReportDailySaleDetailRow? row)
+    private void ToggleDailySalesClientExpand(ReportDailySalesClientSliceRow? row)
     {
         if (row != null)
             row.IsExpanded = !row.IsExpanded;
@@ -413,11 +413,47 @@ public partial class ReportsListViewModel : BaseViewModel
 
     private async Task LoadDailySalesAsync(DateTime from, DateTime to, CancellationToken ct)
     {
-        _allDailySales = await Task.Run(() => _reportService.GetDailySalesAsync(from, to, ct), ct);
-        var dev = _allDailySales.Count > 0 ? _allDailySales[0].Devise : "MAD";
-        LblDailySalesTotalTtc = $"{_allDailySales.Sum(r => r.TotalTtc):N2} {dev}";
-        LblDailySalesTotalProfit = $"{_allDailySales.Sum(r => r.Profit):N2} {dev}";
-        FinishPagedLoad(_allDailySales.Count);
+        var byClient = await Task.Run(() => _reportService.GetSalesByCustomerAsync(from, to, ct), ct);
+        _dailySalesByDay = GroupDailySalesByDay(byClient, CultureInfo.CurrentUICulture);
+        var dev = _dailySalesByDay.Count > 0 ? _dailySalesByDay[0].Devise : "MAD";
+        LblDailySalesTotalTtc = $"{_dailySalesByDay.Sum(r => r.TotalTtc):N2} {dev}";
+        LblDailySalesTotalProfit = $"{_dailySalesByDay.Sum(r => r.Profit):N2} {dev}";
+        FinishPagedLoad(_dailySalesByDay.Count);
+    }
+
+    private static List<ReportDailySalesByDayRow> GroupDailySalesByDay(
+        List<ReportSaleByCustomerRow> byClient, CultureInfo culture)
+    {
+        return byClient
+            .SelectMany(c => c.Days.Select(d => new { c.Client, Day = d, c.Devise }))
+            .GroupBy(x => x.Day.Date.Date)
+            .OrderByDescending(g => g.Key)
+            .Select(g =>
+            {
+                var clients = g
+                    .OrderBy(x => x.Client)
+                    .Select(x => new ReportDailySalesClientSliceRow(
+                        x.Client,
+                        x.Day.NbFactures,
+                        x.Day.TotalHt,
+                        x.Day.TotalTtc,
+                        x.Day.Profit,
+                        x.Day.MarginPct,
+                        x.Devise,
+                        x.Day.Products.ToList()))
+                    .ToList();
+
+                var nbFactures = g.Sum(x => x.Day.NbFactures);
+                var totalHt = g.Sum(x => x.Day.TotalHt);
+                var totalTtc = g.Sum(x => x.Day.TotalTtc);
+                var profit = g.Sum(x => x.Day.Profit);
+                var marginPct = totalHt > 0 ? profit / totalHt * 100m : 0m;
+                var devise = g.First().Devise;
+
+                return new ReportDailySalesByDayRow(
+                    g.Key, nbFactures, totalHt, totalTtc, devise, profit, marginPct, culture, clients);
+            })
+            .ToList();
     }
 
     private async Task LoadLowStockAsync(CancellationToken ct)
@@ -621,32 +657,10 @@ public partial class ReportsListViewModel : BaseViewModel
     private ReportPdfModel BuildSalesByCustomerPdf(string? period, PdfTextAlignment right)
     {
         // Customer-facing PDF: totals only — no margin / profit columns.
-        const int columnCount = 4;
+        const int columnCount = 5;
         var totalLabel = _locale.T("Fact_ColTotal");
         var rows = new List<ReportPdfRow>();
-        var clientIndex = 0;
-        foreach (var r in _filteredSalesByCustomer)
-        {
-            if (clientIndex > 0)
-                rows.Add(PdfClientSeparatorRow(columnCount));
-            clientIndex++;
-
-            rows.Add(PdfRow(r.Client, "", "", r.LblTtc));
-            var dayIndex = 0;
-            foreach (var d in r.Days)
-            {
-                if (dayIndex > 0)
-                    rows.Add(PdfSpacerRow(columnCount));
-                dayIndex++;
-
-                rows.Add(PdfDayHeaderRow(
-                    d.Date,
-                    d.LblDayName,
-                    d.LblCount, "", d.LblTtc));
-                foreach (var p in d.Products)
-                    rows.Add(PdfDetailRow($"  • {p.Reference} {p.Designation}", p.LblQty, p.LblUnitPrice, p.LblTtc));
-            }
-        }
+        AppendClientGroupedSalesPdfRows(rows, _filteredSalesByCustomer, columnCount, includeMargins: false);
 
         return new ReportPdfModel
         {
@@ -654,7 +668,8 @@ public partial class ReportsListViewModel : BaseViewModel
             PeriodLabel = period,
             Columns =
             [
-                new(_locale.T("Lbl_Client"), 2.8f),
+                new(_locale.T("Lbl_Client"), 1.4f),
+                new(_locale.T("Reports_ColProduct"), 1.8f),
                 new(_locale.T("Lbl_Quantity"), 0.8f, right),
                 new(_locale.T("Reports_ColUnitPrice"), 1.2f, right),
                 new(totalLabel, 1.2f, right)
@@ -693,61 +708,10 @@ public partial class ReportsListViewModel : BaseViewModel
 
     private ReportPdfModel BuildDailySalesPdf(string? period, PdfTextAlignment right)
     {
-        const int columnCount = 6;
+        const int columnCount = 7;
         var totalLabel = _locale.T("Fact_ColTotal");
-        var culture = _locale.CurrentLanguage.StartsWith("ar", StringComparison.OrdinalIgnoreCase)
-            ? CultureInfo.GetCultureInfo("ar")
-            : CultureInfo.GetCultureInfo("fr-FR");
         var rows = new List<ReportPdfRow>();
-        var dayIndex = 0;
-        foreach (var r in _allDailySales)
-        {
-            if (dayIndex > 0)
-                rows.Add(PdfSpacerRow(columnCount));
-            dayIndex++;
-
-            var dayName = DisplayDateHelper.DayName(r.Date, culture);
-            rows.Add(PdfDayHeaderRow(
-                r.Date,
-                dayName,
-                r.LblCount, "", r.LblTtc, r.LblProfit, r.LblMargin));
-
-            var dayProducts = r.Details
-                .SelectMany(d => d.Lines)
-                .GroupBy(l => (l.Reference, l.Designation))
-                .Select(g =>
-                {
-                    var qty = g.Sum(x => x.Quantite);
-                    var ht = g.Sum(x => x.TotalHt);
-                    var profit = g.Sum(x => x.Profit);
-                    var marginPct = ht > 0 ? profit / ht * 100m : 0;
-                    return new ReportDailySaleLineRow(
-                        g.Key.Reference,
-                        g.Key.Designation,
-                        qty,
-                        ht,
-                        ht,
-                        r.Devise,
-                        profit,
-                        marginPct);
-                })
-                .OrderByDescending(p => p.TotalTtc)
-                .ToList();
-
-            foreach (var line in dayProducts)
-            {
-                var label = string.IsNullOrWhiteSpace(line.Reference)
-                    ? line.Designation
-                    : $"{line.Reference} {line.Designation}";
-                rows.Add(PdfDetailRow(
-                    $"  • {label}",
-                    line.LblQty,
-                    line.LblUnitPrice,
-                    line.LblTtc,
-                    line.LblProfit,
-                    line.LblMargin));
-            }
-        }
+        AppendDayGroupedSalesPdfRows(rows, _dailySalesByDay, columnCount);
 
         return new ReportPdfModel
         {
@@ -755,7 +719,8 @@ public partial class ReportsListViewModel : BaseViewModel
             PeriodLabel = period,
             Columns =
             [
-                new(_locale.T("Lbl_Client"), 2.2f),
+                new(_locale.T("Lbl_Client"), 1.3f),
+                new(_locale.T("Reports_ColProduct"), 1.6f),
                 new(_locale.T("Lbl_Quantity"), 0.7f, right),
                 new(_locale.T("Reports_ColUnitPrice"), 1.1f, right),
                 new(totalLabel, 1.1f, right),
@@ -770,6 +735,87 @@ public partial class ReportsListViewModel : BaseViewModel
             ],
             Landscape = true
         };
+    }
+
+    private void AppendDayGroupedSalesPdfRows(
+        List<ReportPdfRow> rows,
+        IEnumerable<ReportDailySalesByDayRow> days,
+        int columnCount)
+    {
+        var dayIndex = 0;
+        foreach (var day in days)
+        {
+            if (dayIndex > 0)
+                rows.Add(PdfSpacerRow(columnCount));
+            dayIndex++;
+
+            rows.Add(PdfDayHeaderRow(
+                day.Date, day.LblDayName, "", "", "", day.LblTtc, day.LblProfit, day.LblMargin));
+
+            foreach (var client in day.Clients)
+            {
+                rows.Add(PdfRow(client.Client, "", "", "", client.LblTtc, client.LblProfit, client.LblMargin));
+                foreach (var p in client.Products)
+                {
+                    rows.Add(PdfDetailRow(
+                        "",
+                        $"{p.Reference} {p.Designation}",
+                        p.LblQty, p.LblUnitPrice, p.LblTtc, p.LblProfit, p.LblMargin));
+                }
+            }
+        }
+    }
+
+    private void AppendClientGroupedSalesPdfRows(
+        List<ReportPdfRow> rows,
+        IEnumerable<ReportSaleByCustomerRow> clients,
+        int columnCount,
+        bool includeMargins)
+    {
+        var clientIndex = 0;
+        foreach (var r in clients)
+        {
+            if (clientIndex > 0)
+                rows.Add(PdfClientSeparatorRow(columnCount));
+            clientIndex++;
+
+            if (includeMargins)
+                rows.Add(PdfRow(r.Client, "", "", "", r.LblTtc, r.LblProfit, r.LblMargin));
+            else
+                rows.Add(PdfRow(r.Client, "", "", "", r.LblTtc));
+
+            var dayIndex = 0;
+            foreach (var d in r.Days)
+            {
+                if (dayIndex > 0)
+                    rows.Add(PdfSpacerRow(columnCount));
+                dayIndex++;
+
+                if (includeMargins)
+                {
+                    rows.Add(PdfDayHeaderRow(
+                        d.Date, d.LblDayName, "", "", "", d.LblTtc, d.LblProfit, d.LblMargin));
+                    foreach (var p in d.Products)
+                    {
+                        rows.Add(PdfDetailRow(
+                            "",
+                            $"{p.Reference} {p.Designation}",
+                            p.LblQty, p.LblUnitPrice, p.LblTtc, p.LblProfit, p.LblMargin));
+                    }
+                }
+                else
+                {
+                    rows.Add(PdfDayHeaderRow(d.Date, d.LblDayName, "", "", "", d.LblTtc));
+                    foreach (var p in d.Products)
+                    {
+                        rows.Add(PdfDetailRow(
+                            "",
+                            $"{p.Reference} {p.Designation}",
+                            p.LblQty, p.LblUnitPrice, p.LblTtc));
+                    }
+                }
+            }
+        }
     }
 
     private ReportPdfModel BuildLowStockPdf(PdfTextAlignment right)
@@ -932,7 +978,7 @@ public partial class ReportsListViewModel : BaseViewModel
                 ApplyPage(Refunds, _allRefunds);
                 break;
             case 4:
-                ApplyPage(DailySales, _allDailySales);
+                ApplyPage(DailySales, _dailySalesByDay);
                 break;
             case 5:
                 ApplyPage(LowStockProducts, _allLowStock);

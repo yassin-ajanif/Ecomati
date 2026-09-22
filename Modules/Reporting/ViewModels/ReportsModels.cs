@@ -190,6 +190,100 @@ public sealed partial class ReportSaleByCustomerRow : ObservableObject
     public ObservableCollection<ReportSaleByCustomerDayRow> Days => _days;
 }
 
+public sealed partial class ReportDailySalesClientSliceRow : ObservableObject
+{
+    public ReportDailySalesClientSliceRow(string client, int nbFactures,
+        decimal totalHt, decimal totalTtc, decimal profit, decimal marginPct, string devise,
+        List<ReportSaleByCustomerProductRow>? products = null)
+    {
+        Client = client;
+        NbFactures = nbFactures;
+        TotalHt = totalHt;
+        TotalTtc = totalTtc;
+        Profit = profit;
+        MarginPct = marginPct;
+        Devise = devise;
+        LblCount = nbFactures.ToString();
+        LblTtc = $"{totalTtc:N2} {devise}";
+        LblProfit = $"{profit:N2} {devise}";
+        LblMargin = $"{marginPct:N1}%";
+        if (products != null)
+        {
+            foreach (var p in products)
+                _products.Add(p);
+        }
+    }
+
+    public string Client { get; }
+    public int NbFactures { get; }
+    public decimal TotalHt { get; }
+    public decimal TotalTtc { get; }
+    public decimal Profit { get; }
+    public decimal MarginPct { get; }
+    public string Devise { get; }
+    public string LblCount { get; }
+    public string LblTtc { get; }
+    public string LblProfit { get; }
+    public string LblMargin { get; }
+
+    [ObservableProperty]
+    private bool _isExpanded;
+
+    private readonly ObservableCollection<ReportSaleByCustomerProductRow> _products = [];
+    public ObservableCollection<ReportSaleByCustomerProductRow> Products => _products;
+}
+
+public sealed partial class ReportDailySalesByDayRow : ObservableObject
+{
+    public ReportDailySalesByDayRow(DateTime date, int nbFactures,
+        decimal totalHt, decimal totalTtc, string devise,
+        decimal profit, decimal marginPct,
+        CultureInfo culture,
+        List<ReportDailySalesClientSliceRow>? clients = null)
+    {
+        Date = date;
+        NbFactures = nbFactures;
+        TotalHt = totalHt;
+        TotalTtc = totalTtc;
+        Profit = profit;
+        MarginPct = marginPct;
+        Devise = devise;
+        LblDayName = DisplayDateHelper.DayName(date, culture);
+        LblDate = DisplayDateHelper.ShortDatePdf(date);
+        LblDayLabel = DisplayDateHelper.DayLabel(date, culture);
+        LblCount = nbFactures.ToString();
+        LblTtc = $"{totalTtc:N2} {devise}";
+        LblProfit = $"{profit:N2} {devise}";
+        LblMargin = $"{marginPct:N1}%";
+        if (clients != null)
+        {
+            foreach (var c in clients)
+                _clients.Add(c);
+        }
+    }
+
+    public DateTime Date { get; }
+    public int NbFactures { get; }
+    public decimal TotalHt { get; }
+    public decimal TotalTtc { get; }
+    public decimal Profit { get; }
+    public decimal MarginPct { get; }
+    public string Devise { get; }
+    public string LblDayName { get; }
+    public string LblDate { get; }
+    public string LblDayLabel { get; }
+    public string LblCount { get; }
+    public string LblTtc { get; }
+    public string LblProfit { get; }
+    public string LblMargin { get; }
+
+    [ObservableProperty]
+    private bool _isExpanded;
+
+    private readonly ObservableCollection<ReportDailySalesClientSliceRow> _clients = [];
+    public ObservableCollection<ReportDailySalesClientSliceRow> Clients => _clients;
+}
+
 public sealed class ReportRefundRow
 {
     public ReportRefundRow(string numero, DateTime date, string client,

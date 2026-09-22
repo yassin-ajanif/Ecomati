@@ -415,6 +415,7 @@ internal static class UiTranslationExtras
         ["Reports_ColMarginCharge"] = ("Marge / Charge", "الهامش / المصروف"),
         ["Reports_ColCategory"] = ("Catégorie", "الفئة"),
         ["Reports_ColMarginPct"] = ("Marge %", "الهامش %"),
+        ["Reports_ColProduct"] = ("Produit", "المنتج"),
         ["Reports_ColUnitPrice"] = ("Prix unitaire", "سعر الوحدة"),
         ["Reports_ColNbFactures"] = ("Nb factures", "عدد الفواتير"),
         ["Reports_ColRetour"] = ("Retour", "إرجاع"),

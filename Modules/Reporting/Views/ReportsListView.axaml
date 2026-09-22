@@ -372,63 +372,77 @@
           </Border>
         </StackPanel>
 
-        <!-- Daily sales table -->
+        <!-- Daily sales table (day → client → products) -->
         <StackPanel Spacing="8" IsVisible="{Binding ShowDailySales}">
           <Border Padding="16" Background="{DynamicResource CourseraSurfaceBrush}"
                   BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1" CornerRadius="12">
             <StackPanel Spacing="8">
               <ItemsControl ItemsSource="{Binding DailySales}">
                 <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="vm:ReportDailySaleRow">
-                    <Border Padding="10,8" Margin="0,0,0,4"
-                            Background="{DynamicResource CourseraSurfaceMutedBrush}"
-                            CornerRadius="8">
-                      <StackPanel>
-                        <!-- Main day row -->
-                        <Grid ColumnDefinitions="Auto,1*,1*,1*,1*,1*">
+                  <DataTemplate x:DataType="vm:ReportDailySalesByDayRow">
+                    <StackPanel Margin="0,0,0,14" Spacing="0">
+                      <!-- Day banner — outside column grid -->
+                      <Border Padding="12,10"
+                              Background="{DynamicResource CourseraSurfaceMutedBrush}"
+                              BorderBrush="{DynamicResource CourseraBorderBrush}"
+                              BorderThickness="1,1,1,0"
+                              CornerRadius="8,8,0,0">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
                           <Button Grid.Column="0" Width="24" Height="24" Padding="0"
                                   Background="Transparent" BorderThickness="0"
                                   Content="{Binding IsExpanded, Converter={x:Static conv:BoolToExpandArrowConverter.Instance}}"
-                                  Command="{Binding DataContext.ToggleDailyExpandCommand, ElementName=ThisControl}"
+                                  Command="{Binding DataContext.ToggleDailyDayExpandCommand, ElementName=ThisControl}"
                                   CommandParameter="{Binding}"
                                   FontSize="12" VerticalAlignment="Center"
                                   Foreground="{DynamicResource CourseraPrimaryBrush}"/>
-                          <TextBlock Grid.Column="1" Text="{Binding LblDate}" FontWeight="SemiBold"
-                                     FontSize="13" VerticalAlignment="Center"/>
-                          <TextBlock Grid.Column="2" Text="{Binding LblCount}" FontSize="13"
-                                     VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                          <TextBlock Grid.Column="3" Text="{Binding LblTtc}" FontWeight="SemiBold"
-                                     FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Right"
-                                     Foreground="{DynamicResource CourseraPrimaryBrush}"/>
-                          <TextBlock Grid.Column="4" Text="{Binding LblProfit}" FontSize="13"
-                                     FontWeight="SemiBold"
-                                     VerticalAlignment="Center" HorizontalAlignment="Right"
-                                     Foreground="{DynamicResource CourseraSuccessBrush}"/>
-                          <TextBlock Grid.Column="5" Text="{Binding LblMargin}" FontSize="12"
-                                     Classes="subtle"
-                                     VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <StackPanel Orientation="Horizontal" Spacing="6"
+                                        FlowDirection="LeftToRight">
+                              <TextBlock Text="{Binding LblDate}" FontWeight="SemiBold" FontSize="13"/>
+                              <TextBlock Text="—" Classes="subtle" FontSize="13"/>
+                              <TextBlock Text="{Binding LblDayName}" FontWeight="SemiBold" FontSize="13"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding LblCount}" Classes="subtle" FontSize="12"/>
+                          </StackPanel>
+                          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16"
+                                      VerticalAlignment="Center">
+                            <TextBlock Text="{Binding LblTtc}" FontWeight="SemiBold"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource CourseraPrimaryBrush}"/>
+                            <TextBlock Text="{Binding LblProfit}" FontWeight="SemiBold"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource CourseraSuccessBrush}"/>
+                            <TextBlock Text="{Binding LblMargin}" Classes="subtle" FontSize="12"/>
+                          </StackPanel>
                         </Grid>
+                      </Border>
 
-                        <!-- Expanded invoice details -->
-                        <StackPanel IsVisible="{Binding IsExpanded}" Margin="28,8,0,0" Spacing="3">
-                          <ItemsControl ItemsSource="{Binding Details}">
+                      <!-- Table body for this day -->
+                      <Border Padding="10,8"
+                              Background="{DynamicResource CourseraSurfaceBrush}"
+                              BorderBrush="{DynamicResource CourseraBorderBrush}"
+                              BorderThickness="1,0,1,1"
+                              CornerRadius="0,0,8,8"
+                              IsVisible="{Binding IsExpanded}">
+                        <StackPanel Spacing="3">
+                          <ItemsControl ItemsSource="{Binding Clients}">
                             <ItemsControl.ItemTemplate>
-                              <DataTemplate x:DataType="vm:ReportDailySaleDetailRow">
+                              <DataTemplate x:DataType="vm:ReportDailySalesClientSliceRow">
                                 <StackPanel Spacing="3" Margin="0,0,0,4">
                                   <Border Padding="8,6" CornerRadius="6"
                                           Background="{DynamicResource CourseraSurfaceBrush}">
-                                    <Grid ColumnDefinitions="Auto,1.5*,1.5*,1*,1*,1*">
+                                    <Grid ColumnDefinitions="Auto,2*,1*,1*,1*,1*">
                                       <Button Grid.Column="0" Width="24" Height="24" Padding="0"
                                               Background="Transparent" BorderThickness="0"
                                               Content="{Binding IsExpanded, Converter={x:Static conv:BoolToExpandArrowConverter.Instance}}"
-                                              Command="{Binding DataContext.ToggleDailyInvoiceExpandCommand, ElementName=ThisControl}"
+                                              Command="{Binding DataContext.ToggleDailySalesClientExpandCommand, ElementName=ThisControl}"
                                               CommandParameter="{Binding}"
                                               FontSize="12" VerticalAlignment="Center"
                                               Foreground="{DynamicResource CourseraPrimaryBrush}"/>
-                                      <TextBlock Grid.Column="1" Text="{Binding Numero}" FontSize="12"
-                                                 FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                      <TextBlock Grid.Column="2" Text="{Binding Client}" FontSize="12"
-                                                 VerticalAlignment="Center" Classes="subtle"/>
+                                      <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Client}" FontWeight="SemiBold" FontSize="12"/>
+                                        <TextBlock Text="{Binding LblCount}" Classes="subtle" FontSize="11"/>
+                                      </StackPanel>
                                       <TextBlock Grid.Column="3" Text="{Binding LblTtc}" FontSize="12"
                                                  FontWeight="SemiBold"
                                                  VerticalAlignment="Center" HorizontalAlignment="Right"
@@ -444,12 +458,29 @@
                                   </Border>
 
                                   <StackPanel IsVisible="{Binding IsExpanded}" Margin="28,0,0,0" Spacing="2">
-                                    <ItemsControl ItemsSource="{Binding Lines}">
+                                    <Grid ColumnDefinitions="2*,1*,1*,1*,1*,1*" Margin="8,0,8,2">
+                                      <TextBlock Grid.Column="1" Text="{Binding DataContext.ColCustomerQty, ElementName=ThisControl}"
+                                                 FontSize="11" FontWeight="SemiBold" Classes="subtle"
+                                                 HorizontalAlignment="Right"/>
+                                      <TextBlock Grid.Column="2" Text="{Binding DataContext.ColCustomerUnitPrice, ElementName=ThisControl}"
+                                                 FontSize="11" FontWeight="SemiBold" Classes="subtle"
+                                                 HorizontalAlignment="Right"/>
+                                      <TextBlock Grid.Column="3" Text="{Binding DataContext.LblSaleByCustomerLabelTtc, ElementName=ThisControl}"
+                                                 FontSize="11" FontWeight="SemiBold" Classes="subtle"
+                                                 HorizontalAlignment="Right"/>
+                                      <TextBlock Grid.Column="4" Text="{Binding DataContext.LblSaleByCustomerLabelProfit, ElementName=ThisControl}"
+                                                 FontSize="11" FontWeight="SemiBold" Classes="subtle"
+                                                 HorizontalAlignment="Right"/>
+                                      <TextBlock Grid.Column="5" Text="{Binding DataContext.ColCustomerMarginPct, ElementName=ThisControl}"
+                                                 FontSize="11" FontWeight="SemiBold" Classes="subtle"
+                                                 HorizontalAlignment="Right"/>
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding Products}">
                                       <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:ReportDailySaleLineRow">
+                                        <DataTemplate x:DataType="vm:ReportSaleByCustomerProductRow">
                                           <Border Padding="8,6" CornerRadius="6"
                                                   Background="{DynamicResource CourseraSurfaceMutedBrush}">
-                                            <Grid ColumnDefinitions="2*,1*,1*,1*,1*">
+                                            <Grid ColumnDefinitions="2*,1*,1*,1*,1*,1*">
                                               <StackPanel Grid.Column="0">
                                                 <TextBlock Text="{Binding Reference}" FontSize="12" FontWeight="SemiBold"/>
                                                 <TextBlock Text="{Binding Designation}" Classes="subtle" FontSize="11"/>
@@ -467,6 +498,9 @@
                                                          FontWeight="SemiBold"
                                                          VerticalAlignment="Center" HorizontalAlignment="Right"
                                                          Foreground="{DynamicResource CourseraSuccessBrush}"/>
+                                              <TextBlock Grid.Column="5" Text="{Binding LblMargin}" FontSize="11"
+                                                         Classes="subtle"
+                                                         VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                             </Grid>
                                           </Border>
                                         </DataTemplate>
@@ -478,8 +512,8 @@
                             </ItemsControl.ItemTemplate>
                           </ItemsControl>
                         </StackPanel>
-                      </StackPanel>
-                    </Border>
+                      </Border>
+                    </StackPanel>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
@@ -489,6 +523,13 @@
                       Background="{DynamicResource CourseraSurfaceMutedBrush}"
                       BorderBrush="{DynamicResource CourseraBorderBrush}" BorderThickness="1">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="24">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="{Binding LblSaleByCustomerLabelTtc}" FontWeight="SemiBold"
+                               FontSize="13" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding LblDailySalesTotalTtc}" FontSize="14" FontWeight="Bold"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource CourseraPrimaryBrush}"/>
+                  </StackPanel>
                   <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Text="{Binding LblSaleByCustomerLabelProfit}" FontWeight="SemiBold"
                                FontSize="13" VerticalAlignment="Center"/>
