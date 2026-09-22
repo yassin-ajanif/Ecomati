@@ -387,25 +387,28 @@
                               BorderBrush="{DynamicResource CourseraBorderBrush}"
                               BorderThickness="1,1,1,0"
                               CornerRadius="8,8,0,0">
-                        <Grid ColumnDefinitions="Auto,*,Auto">
-                          <Button Grid.Column="0" Width="24" Height="24" Padding="0"
-                                  Background="Transparent" BorderThickness="0"
-                                  Content="{Binding IsExpanded, Converter={x:Static conv:BoolToExpandArrowConverter.Instance}}"
-                                  Command="{Binding DataContext.ToggleDailyDayExpandCommand, ElementName=ThisControl}"
-                                  CommandParameter="{Binding}"
-                                  FontSize="12" VerticalAlignment="Center"
-                                  Foreground="{DynamicResource CourseraPrimaryBrush}"/>
-                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <StackPanel Orientation="Horizontal" Spacing="6"
-                                        FlowDirection="LeftToRight">
-                              <TextBlock Text="{Binding LblDate}" FontWeight="SemiBold" FontSize="13"/>
-                              <TextBlock Text="—" Classes="subtle" FontSize="13"/>
-                              <TextBlock Text="{Binding LblDayName}" FontWeight="SemiBold" FontSize="13"/>
-                            </StackPanel>
-                            <TextBlock Text="{Binding LblCount}" Classes="subtle" FontSize="12"/>
-                          </StackPanel>
-                          <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16"
+                        <DockPanel LastChildFill="True">
+                          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="12"
                                       VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                              <StackPanel Orientation="Horizontal" Spacing="6"
+                                          FlowDirection="LeftToRight">
+                                <TextBlock Text="{Binding LblDate}" FontWeight="SemiBold" FontSize="13"/>
+                                <TextBlock Text="—" Classes="subtle" FontSize="13"/>
+                                <TextBlock Text="{Binding LblDayName}" FontWeight="SemiBold" FontSize="13"/>
+                              </StackPanel>
+                              <TextBlock Text="{Binding LblCount}" Classes="subtle" FontSize="12"
+                                         VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button Width="24" Height="24" Padding="0"
+                                    Background="Transparent" BorderThickness="0"
+                                    Content="{Binding IsExpanded, Converter={x:Static conv:BoolToExpandArrowConverter.Instance}}"
+                                    Command="{Binding DataContext.ToggleDailyDayExpandCommand, ElementName=ThisControl}"
+                                    CommandParameter="{Binding}"
+                                    FontSize="12" VerticalAlignment="Center"
+                                    Foreground="{DynamicResource CourseraPrimaryBrush}"/>
+                          </StackPanel>
+                          <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
                             <TextBlock Text="{Binding LblTtc}" FontWeight="SemiBold"
                                        FontSize="13"
                                        Foreground="{DynamicResource CourseraPrimaryBrush}"/>
@@ -414,7 +417,7 @@
                                        Foreground="{DynamicResource CourseraSuccessBrush}"/>
                             <TextBlock Text="{Binding LblMargin}" Classes="subtle" FontSize="12"/>
                           </StackPanel>
-                        </Grid>
+                        </DockPanel>
                       </Border>
 
                       <!-- Table body for this day -->
