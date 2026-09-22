@@ -795,6 +795,7 @@ public partial class ReportsListViewModel : BaseViewModel
                 {
                     rows.Add(PdfDayHeaderRow(
                         d.Date, d.LblDayName, "", "", "", d.LblTtc, d.LblProfit, d.LblMargin));
+                    rows.Add(PdfRow(r.Client, "", "", "", d.LblTtc, d.LblProfit, d.LblMargin));
                     foreach (var p in d.Products)
                     {
                         rows.Add(PdfDetailRow(
@@ -806,6 +807,7 @@ public partial class ReportsListViewModel : BaseViewModel
                 else
                 {
                     rows.Add(PdfDayHeaderRow(d.Date, d.LblDayName, "", "", "", d.LblTtc));
+                    rows.Add(PdfRow(r.Client, "", "", "", d.LblTtc));
                     foreach (var p in d.Products)
                     {
                         rows.Add(PdfDetailRow(
