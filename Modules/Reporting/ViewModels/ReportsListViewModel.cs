@@ -102,6 +102,7 @@ public partial class ReportsListViewModel : BaseViewModel
     [ObservableProperty] private string _lblSaleByCustomerLabelTtc = string.Empty;
     [ObservableProperty] private string _lblSaleByCustomerLabelProfit = string.Empty;
     [ObservableProperty] private string _lblSaleByCustomerTotalProfit = string.Empty;
+    [ObservableProperty] private string _lblDailySalesTotalTtc = string.Empty;
     [ObservableProperty] private string _lblDailySalesTotalProfit = string.Empty;
     [ObservableProperty] private string _lblStockValHtLabel = string.Empty;
     [ObservableProperty] private string _lblStockValTtcLabel = string.Empty;
@@ -414,6 +415,7 @@ public partial class ReportsListViewModel : BaseViewModel
     {
         _allDailySales = await Task.Run(() => _reportService.GetDailySalesAsync(from, to, ct), ct);
         var dev = _allDailySales.Count > 0 ? _allDailySales[0].Devise : "MAD";
+        LblDailySalesTotalTtc = $"{_allDailySales.Sum(r => r.TotalTtc):N2} {dev}";
         LblDailySalesTotalProfit = $"{_allDailySales.Sum(r => r.Profit):N2} {dev}";
         FinishPagedLoad(_allDailySales.Count);
     }
@@ -618,11 +620,9 @@ public partial class ReportsListViewModel : BaseViewModel
 
     private ReportPdfModel BuildSalesByCustomerPdf(string? period, PdfTextAlignment right)
     {
-        const int columnCount = 6;
+        // Customer-facing PDF: totals only — no margin / profit columns.
+        const int columnCount = 4;
         var totalLabel = _locale.T("Fact_ColTotal");
-        var culture = _locale.CurrentLanguage.StartsWith("ar", StringComparison.OrdinalIgnoreCase)
-            ? CultureInfo.GetCultureInfo("ar")
-            : CultureInfo.GetCultureInfo("fr-FR");
         var rows = new List<ReportPdfRow>();
         var clientIndex = 0;
         foreach (var r in _filteredSalesByCustomer)
@@ -631,7 +631,7 @@ public partial class ReportsListViewModel : BaseViewModel
                 rows.Add(PdfClientSeparatorRow(columnCount));
             clientIndex++;
 
-            rows.Add(PdfRow(r.Client, "", "", r.LblTtc, r.LblProfit, r.LblMargin));
+            rows.Add(PdfRow(r.Client, "", "", r.LblTtc));
             var dayIndex = 0;
             foreach (var d in r.Days)
             {
@@ -642,9 +642,9 @@ public partial class ReportsListViewModel : BaseViewModel
                 rows.Add(PdfDayHeaderRow(
                     d.Date,
                     d.LblDayName,
-                    d.LblCount, "", d.LblTtc, d.LblProfit, d.LblMargin));
+                    d.LblCount, "", d.LblTtc));
                 foreach (var p in d.Products)
-                    rows.Add(PdfDetailRow($"  • {p.Reference} {p.Designation}", p.LblQty, p.LblUnitPrice, p.LblTtc, p.LblProfit, p.LblMargin));
+                    rows.Add(PdfDetailRow($"  • {p.Reference} {p.Designation}", p.LblQty, p.LblUnitPrice, p.LblTtc));
             }
         }
 
@@ -654,18 +654,15 @@ public partial class ReportsListViewModel : BaseViewModel
             PeriodLabel = period,
             Columns =
             [
-                new(_locale.T("Lbl_Client"), 2.2f),
-                new(_locale.T("Lbl_Quantity"), 0.7f, right),
-                new(_locale.T("Reports_ColUnitPrice"), 1.1f, right),
-                new(totalLabel, 1.1f, right),
-                new(_locale.T("Reports_LblProfit"), 1.1f, right),
-                new(_locale.T("Reports_ColMarginPct"), 0.8f, right)
+                new(_locale.T("Lbl_Client"), 2.8f),
+                new(_locale.T("Lbl_Quantity"), 0.8f, right),
+                new(_locale.T("Reports_ColUnitPrice"), 1.2f, right),
+                new(totalLabel, 1.2f, right)
             ],
             Rows = rows,
             SummaryLines =
             [
-                new(totalLabel, LblSaleByCustomerTotalTtc),
-                new(LblSaleByCustomerLabelProfit, LblSaleByCustomerTotalProfit)
+                new(totalLabel, LblSaleByCustomerTotalTtc)
             ],
             Landscape = true
         };
@@ -696,25 +693,59 @@ public partial class ReportsListViewModel : BaseViewModel
 
     private ReportPdfModel BuildDailySalesPdf(string? period, PdfTextAlignment right)
     {
+        const int columnCount = 6;
+        var totalLabel = _locale.T("Fact_ColTotal");
+        var culture = _locale.CurrentLanguage.StartsWith("ar", StringComparison.OrdinalIgnoreCase)
+            ? CultureInfo.GetCultureInfo("ar")
+            : CultureInfo.GetCultureInfo("fr-FR");
         var rows = new List<ReportPdfRow>();
+        var dayIndex = 0;
         foreach (var r in _allDailySales)
         {
-            rows.Add(PdfRow(r.LblDate, r.LblCount, r.LblTtc, r.LblProfit, r.LblMargin));
-            foreach (var d in r.Details)
-            {
-                rows.Add(PdfDetailRow($"  {d.Numero}", d.Client, d.LblTtc, d.LblProfit, d.LblMargin));
-                foreach (var line in d.Lines)
+            if (dayIndex > 0)
+                rows.Add(PdfSpacerRow(columnCount));
+            dayIndex++;
+
+            var dayName = DisplayDateHelper.DayName(r.Date, culture);
+            rows.Add(PdfDayHeaderRow(
+                r.Date,
+                dayName,
+                r.LblCount, "", r.LblTtc, r.LblProfit, r.LblMargin));
+
+            var dayProducts = r.Details
+                .SelectMany(d => d.Lines)
+                .GroupBy(l => (l.Reference, l.Designation))
+                .Select(g =>
                 {
-                    var label = string.IsNullOrWhiteSpace(line.Reference)
-                        ? line.Designation
-                        : $"{line.Reference} {line.Designation}";
-                    rows.Add(PdfDetailRow(
-                        $"    • {label} ({line.LblQty} × {line.LblUnitPrice})",
-                        "",
-                        line.LblTtc,
-                        line.LblProfit,
-                        line.LblMargin));
-                }
+                    var qty = g.Sum(x => x.Quantite);
+                    var ht = g.Sum(x => x.TotalHt);
+                    var profit = g.Sum(x => x.Profit);
+                    var marginPct = ht > 0 ? profit / ht * 100m : 0;
+                    return new ReportDailySaleLineRow(
+                        g.Key.Reference,
+                        g.Key.Designation,
+                        qty,
+                        ht,
+                        ht,
+                        r.Devise,
+                        profit,
+                        marginPct);
+                })
+                .OrderByDescending(p => p.TotalTtc)
+                .ToList();
+
+            foreach (var line in dayProducts)
+            {
+                var label = string.IsNullOrWhiteSpace(line.Reference)
+                    ? line.Designation
+                    : $"{line.Reference} {line.Designation}";
+                rows.Add(PdfDetailRow(
+                    $"  • {label}",
+                    line.LblQty,
+                    line.LblUnitPrice,
+                    line.LblTtc,
+                    line.LblProfit,
+                    line.LblMargin));
             }
         }
 
@@ -724,17 +755,20 @@ public partial class ReportsListViewModel : BaseViewModel
             PeriodLabel = period,
             Columns =
             [
-                new(_locale.T("DevisList_ColDate"), 1.4f),
-                new(_locale.T("Reports_ColNbFactures"), 1f, right),
-                new(_locale.T("Reports_LblTotalTtc"), 1.2f, right),
-                new(_locale.T("Reports_LblProfit"), 1.2f, right),
-                new(_locale.T("Reports_ColMarginPct"), 0.9f, right)
+                new(_locale.T("Lbl_Client"), 2.2f),
+                new(_locale.T("Lbl_Quantity"), 0.7f, right),
+                new(_locale.T("Reports_ColUnitPrice"), 1.1f, right),
+                new(totalLabel, 1.1f, right),
+                new(_locale.T("Reports_LblProfit"), 1.1f, right),
+                new(_locale.T("Reports_ColMarginPct"), 0.8f, right)
             ],
             Rows = rows,
             SummaryLines =
             [
+                new(totalLabel, LblDailySalesTotalTtc),
                 new(LblSaleByCustomerLabelProfit, LblDailySalesTotalProfit)
-            ]
+            ],
+            Landscape = true
         };
     }
 
